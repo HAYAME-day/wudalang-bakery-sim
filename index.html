@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>武大郎卖炊饼模拟器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  
+
+</head>
+<body>
+  <h2>武大郎卖炊饼模拟器</h2>
+  <div id="status">
+    钱：<span id="money">10</span>两｜
+    声望：<span id="reputation">10</span>｜
+    时辰：<span id="shichen">清晨</span>
+  </div>
+  <div id="materials"></div>
+  <div id="news">【今日街头新闻】今天的街道很热闹，要开始卖炊饼了！</div>
+  <div id="main-wrap">
+    <div id="text-area"></div>
+    <div id="actions"></div>
+  </div>
+  <div id="log"><ul id="loglist"></ul></div>
+  <button id="sidebar-btn" title="查看好感">❤</button>
+  <div id="sidebar">
+    <div class="favor-title">角色好感</div>
+    <div id="favor-list"></div>
+  </div>
+<script src="data/products.js"></script>
+<script src="data/characters.js"></script>
+<script src="data/news.js"></script>
+
+<script src="events/businessEvents.js"></script>
+<script src="events/giftEvents.js"></script>
+<script src="events/favorEvents.js"></script>
+
+<script src="main.js"></script>
+
+</body>
+</html>
