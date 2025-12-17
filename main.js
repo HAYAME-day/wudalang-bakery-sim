@@ -1,7 +1,7 @@
 // 状态变量和数据最初定义
 let money = 10, reputation = 10, day = 1, timeIdx = 0, state = 'business';
 const shichenArr = ["清晨", "上午", "中午", "午后", "夜晚"];
-let materials = { 面粉: 5, 酥油: 5, 蔬菜: 2, 肉: 1 };
+let materials = { 面粉: 3, 酥油: 3, 蔬菜: 0, 肉: 0 };
 let favors = [ { name: "金莲", value: 0 }, { name: "西门庆", value: 0 }, { name: "武松", value: 0 } ];
 
 // 全局存储文本历史，现为20条
@@ -31,12 +31,71 @@ function update() {
   document.getElementById('reputation').textContent = reputation;
   document.getElementById('shichen').textContent = shichenArr[timeIdx];
   renderFavors(); setThemeByTime(); renderMaterials();
+  renderMaterialBag();
+
 }
-    // 好感侧栏
+    // 好感侧栏（右侧）
     function renderFavors() {
       let html = favors.map(f=>`<div class="favor-item"><span class="favor-name">${f.name}</span><span class="favor-value">${f.value}</span></div>`).join("");
       document.getElementById('favor-list').innerHTML = html;
     }
+    // 背包侧栏（左侧）
+
+// 侧栏状态控制
+    const sidebarLeft = document.getElementById('sidebar-left');
+    const sidebarLeftBtn = document.getElementById('sidebar-left-btn');
+    sidebarLeftBtn.onclick = function () {
+      if (sidebarLeft.style.left === '0px') {
+        sidebarLeft.style.left = '-270px';
+      } else {
+        sidebarLeft.style.left = '0px';
+      }
+    }
+// 点侧栏外自动关闭
+    document.body.addEventListener('click', function(e) {
+      if (!sidebarLeft.contains(e.target) && e.target !== sidebarLeftBtn) {
+        sidebarLeft.style.left = '-270px';
+      }
+    });
+
+// 背包内标签切换（目前含材料和菜谱）
+    const tabBtns = [
+      document.getElementById('tab-materials'),
+      document.getElementById('tab-recipes')
+    ];
+    const tabContents = [
+      document.getElementById('tab-content-materials'),
+      document.getElementById('tab-content-recipes')
+    ];
+
+    function setTabVertical(activeIdx) {
+      tabBtns.forEach((btn, i) => {
+        if (i === activeIdx) {
+          btn.style.background = i === 0 ? "#eef7fb" : "#f7efe9";
+          btn.style.color = "#2b4c88";
+          btn.style.fontWeight = "bold";
+        } else {
+          btn.style.background = i === 0 ? "#f7efe9" : "#eef7fb";
+          btn.style.color = "#8a8a8a";
+          btn.style.fontWeight = "normal";
+        }
+        tabContents[i].style.display = i === activeIdx ? "" : "none";
+      });
+    }
+    tabBtns[0].onclick = ()=>setTabVertical(0);
+    tabBtns[1].onclick = ()=>setTabVertical(1);
+// 初始化
+    setTabVertical(0);
+//获取材料函数，是用于确保曾经获取过的材料都会体现在页面里，如果获取过但是数量为0则为灰色
+    function gainMaterial(name, num) {
+      if (materials[name] == null) materials[name] = 0;
+      materials[name] += num;
+      if (materials[name] < 0) materials[name] = 0; // 不让材料变成负数
+      update(); 
+}
+
+
+
     // 材料栏
     function renderMaterials() {
       let arr = Object.entries(materials).map(([k,v])=>`${k}:${v}`);
