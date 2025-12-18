@@ -4,6 +4,8 @@ const shichenArr = ["清晨", "上午", "中午", "午后", "夜晚"];
 let materials = { 面粉: 3, 酥油: 3, 蔬菜: 0, 肉: 0 };
 let favors = [ { name: "金莲", value: 0 }, { name: "西门庆", value: 0 }, { name: "武松", value: 0 } ];
 
+let selectedRecipeId = 'basic';//初始化选中菜谱
+
 // 全局存储文本历史，现为20条
 const maxTextHistory = 20;
 let textHistory = [];
@@ -82,13 +84,23 @@ function update() {
         tabContents[i].style.display = i === activeIdx ? "" : "none";
       });
     }
-    tabBtns[0].onclick = ()=>setTabVertical(0);
-    tabBtns[1].onclick = ()=>setTabVertical(1);
+    
+//每次点击都能重新渲染内容
+    tabBtns[0].onclick = () => {
+  setTabVertical(0);     // 切换到材料tab
+  renderMaterialBag();   // 重新渲染材料内容
+};
+tabBtns[1].onclick = () => {
+  setTabVertical(1);     // 切换到菜谱tab
+  renderRecipeBook();    // 重新渲染菜谱内容
+};
+
+
 // 初始化
     setTabVertical(0);
 //获取材料函数，是用于确保曾经获取过的材料都会体现在页面里，如果获取过但是数量为0则为灰色
     function gainMaterial(name, num) {
-      if (materials[name] == null) materials[name] = 0;
+      if (materials[name] == null) materials[name] = 0;//先检查是否已有，如果没有就先定义为0
       materials[name] += num;
       if (materials[name] < 0) materials[name] = 0; // 不让材料变成负数
       update(); 
@@ -122,7 +134,7 @@ function update() {
     function isNight() { return timeIdx >= 3; }
     // 新品解锁
     function unlockProduct(pid) {
-      let prod = products.find(p => p.id === pid);
+      let prod = recipes.find(p => p.id === pid);
       if (prod && !prod.unlocked) {
         prod.unlocked = true;
         log(`新品解锁：「${prod.name}」`);

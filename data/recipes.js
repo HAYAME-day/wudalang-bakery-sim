@@ -13,7 +13,7 @@ const recipes = [
 	id: 'stuffed',
 	name: "蔬菜脆餅",
 	unlocked: false,
-	recipt: { 面粉: 1, 酥油: 1, 蔬菜: 1},
+	recipe: { 面粉: 1, 酥油: 1, 蔬菜: 1},
 	hint: "普通炊饼加点野菜进去烤脆一点会好吃吗？",
 	unlockType: 'normal',
 	unlockFavor: null

@@ -1,6 +1,6 @@
 //菜谱显示渲染
 function renderRecipeBook() {
-  let html = "<table><tr><th>序号</th><th>菜名</th><th>所需材料/提示</th></tr>";
+  let html = "<table><tr><th>序号</th><th>菜名</th><th>所需材料/提示</th><th>售卖</th></tr>";
   recipes.forEach((r, i) => {
     let name = r.unlocked ? r.name : "？";
     let materialText;
@@ -11,7 +11,11 @@ function renderRecipeBook() {
     } else {
       materialText = r.hint; // 研发提示
     }
-    html += `<tr><td>${i+1}</td><td>${name}</td><td>${materialText}</td></tr>`;
+    let btnHtml = " ";
+    if (r.unlocked) {
+      btnHtml = `<button onclick="selcetRecipe('${r.id}')" ${selectedRecipeId === r.id ? 'style="background:#d4dcd4;"' : ""}>${selectedRecipeId === r.id ? "已选" : "选择"}</button>`;
+    }
+    html += `<tr><td>${i+1}</td><td>${name}</td><td>${materialText}</td><td>${btnHtml}</td></tr>`;
   });
   html += "</table>";
   document.getElementById('tab-content-recipes').innerHTML = html;

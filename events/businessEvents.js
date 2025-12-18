@@ -36,8 +36,8 @@ const purchaseChannels = [
 // 经营主按钮
 function showBusiness() {
   state = 'business';
-  let options = products.filter(p=>p.unlocked).map(p=>{
-    return { text: `卖${p.name}（${p.intro}）`, action: ()=>sell(p) };
+  let options = recipes.filter(p=>p.unlocked).map(p=>{
+    return { text: `卖${p.name}`, action: ()=>sell(p) };
   });
   setActions([
     ...options,
