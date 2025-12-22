@@ -154,6 +154,18 @@ tabBtns[1].onclick = () => {
       setThemeByTime();
     }
 
+//主研发点击
+document.getElementById('tab-research').onclick = function() {
+  // 隐藏其他内容，显示研发内容
+  document.getElementById('tab-content-materials').style.display = 'none';
+  document.getElementById('tab-content-recipes').style.display = 'none';
+  document.getElementById('tab-content-research').style.display = '';
+  renderResearchPanel(); // 每次点都刷新一下
+};
+
+
+
+
 
 // 侧栏逻辑
 const sidebar = document.getElementById('sidebar');
