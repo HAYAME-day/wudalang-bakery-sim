@@ -1,29 +1,34 @@
-// research.js
 
 let selectedRecipeMaterials = [];
 
 function renderResearchPanel() {
-  // 先列出所有已获得过的材料，点一下就选上（最多选3种）
+  const actions = document.getElementById('actions');
   let html = "<div class='research-panel'><b>研发新菜谱</b><br>";
   html += "选择3种不同材料：<br>";
-  Object.keys(materials).forEach(name => {
-    const num = materials[name];
-    const isSelected = selectedRecipeMaterials.includes(name);
-    html += `<button onclick="selectMaterialForResearch('${name}')" ${isSelected ? "style='background:#cde'" : ""} ${num === 0 ? "disabled" : ""}>${name} (${num})</button> `;
+  // 只显示玩家曾经获得过的材料
+  Object.keys(materials).forEach(id => {
+    const num = materials[id];//修改为用id做主键获取信息
+    const info = getMaterialInfo(id);
+    const name = info.name;
+    const icon = getMaterialIconHtml(id);//获取图片函数
+
+    const isSelected = selectedRecipeMaterials.includes(id);
+
+    html += `<button onclick="selectMaterialForResearch('${id}')" ${isSelected ? "style='background:#cde'" : ""} ${num === 0 ? "disabled" : ""}>${icon}${name} (${num})</button> `;
   });
   html += "<br><br>";
   html += `<button onclick="researchRecipe()" ${selectedRecipeMaterials.length === 3 ? "" : "disabled"}>研发</button>`;
   html += `<button onclick="clearResearchSelection()">清空选择</button>`;
+  html += `<button onclick="showBusiness()" style="margin-left:12px;">返回经营</button>`;
   html += "</div>";
-  document.getElementById('tab-content-research').innerHTML = html;
+  actions.innerHTML = html;
 }
 
-function selectMaterialForResearch(name) {
-  if (selectedRecipeMaterials.includes(name)) {
-    // 取消选择
-    selectedRecipeMaterials = selectedRecipeMaterials.filter(x => x !== name);
-  } else if (selectedRecipeMaterials.length < 3) {
-    selectedRecipeMaterials.push(name);
+function selectMaterialForResearch(id) {//材料选择和清空
+  if (!selectedRecipeMaterials.includes(id) && selectedRecipeMaterials.length < 3) {
+    selectedRecipeMaterials.push(id);
+  } else if (selectedRecipeMaterials.includes(id)) {
+    selectedRecipeMaterials = selectedRecipeMaterials.filter(n => n !== id);
   }
   renderResearchPanel();
 }
@@ -34,46 +39,34 @@ function clearResearchSelection() {
 }
 
 function researchRecipe() {
-  if (selectedRecipeMaterials.length !== 3) {
-    pushText("请选满三种材料");
-    return;
-  }
-  // 检查材料是否足够
-  for (let mat of selectedRecipeMaterials) {
-    if (!materials[mat] || materials[mat] < 1) {
-      pushText(`${mat}不足，无法研发。`);
-      return;
+  // 判断是否已有该配方
+  const key = selectedRecipeMaterials.slice().sort().join('+');//选中的id拼成字符串key
+  let found = null;
+  for (let r of recipes) {
+    const recipeKey = Object.keys(r.recipe).sort().join('+');
+    if (recipeKey === key) {
+      found = r;
+      break;
     }
   }
-  // 查找是否对应菜谱
-  let matched = recipes.find(r => arrayEqual(Object.keys(r.recipe), selectedRecipeMaterials));
-  if (matched) {
-    if (matched.unlocked) {
-      pushText(`你早已掌握了「${matched.name}」，无需重复研发！`);
-      return;
+  let msg = "";
+  if (found) {
+    if (found.unlocked) {
+      msg = `你尝试用这三种材料，结果发现……这就是「${found.name}」！`;
     } else {
-      // 消耗材料
-      selectedRecipeMaterials.forEach(mat => materials[mat] -= 1);
-      matched.unlocked = true;
-      pushText(`研发成功！你获得了新菜谱：「${matched.name}」`);
-      renderRecipeBook && renderRecipeBook();
-      renderMaterialBag && renderMaterialBag();
+      found.unlocked = true;
+      msg = `你成功研发出了新品：「${found.name}」！`;
     }
   } else {
-    // 未匹配菜谱
-    selectedRecipeMaterials.forEach(mat => materials[mat] -= 1);
-    pushText("本次研发没能做出新菜谱……");
-    renderMaterialBag && renderMaterialBag();
+    msg = "这三种材料混在一起，并没有做出新花样……";
   }
-  // 清空选择
-  selectedRecipeMaterials = [];
-  renderResearchPanel();
-}
-
-// 数组内容相等判断，不考虑顺序
-function arrayEqual(a, b) {
-  if (a.length !== b.length) return false;
-  a = a.slice().sort();
-  b = b.slice().sort();
-  return a.every((v, i) => v === b[i]);
+  // 材料消耗
+  selectedRecipeMaterials.forEach(id => {
+    materials[id] -= 1;
+    if (materials[id] < 0) materials[id] = 0;
+  });
+  clearResearchSelection();
+  update();
+  pushText(msg);
+  showResearchPanel(); // 继续停在研发面板
 }

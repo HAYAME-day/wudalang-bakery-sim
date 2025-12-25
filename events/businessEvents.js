@@ -1,51 +1,87 @@
 // 进货渠道这一块
 const purchaseChannels = [
-      {
-        id: 'farmer', unlocked: true, label: '相熟农户',
-        desc: '种地的姨姨便宜卖面粉酥油和蔬菜，偶尔也会给点小惊喜',
-        price: 4,
-        result: () => {
-          materials['面粉'] += 2;
-          materials['酥油'] += 2;
-          materials['蔬菜'] += 2;
-          if (Math.random() < 0.2) {
-            materials['肉'] += 1;
-            pushText('相熟的农户姨姨搓了搓手，神神秘秘地递给你一包风干的什么东西——是兔子肉！');
-          }
-        }
-      },
-      {
-        id: 'innkeeper', unlocked: true, label: '酒楼奸商',
-        desc: '高价买齐全食材，偶尔嘛……也喜欢搭售些别的东西',
-        price: 10,
-        result: () => {
-          materials['面粉'] += 2;
-          materials['酥油'] += 2;
-          materials['蔬菜'] += 2;
-          materials['肉'] += 2;
-          // 夜间概率触发折箩
-          if (isNight() && Math.random() < 0.4) {
-            triggerInnDiscardEvent();
-            return false;
-          }
-
-        }
+  {
+    id: 'farmer', 
+    unlocked: true, 
+    label: '相熟农户',
+    desc: '价格便宜(6折)，但种类有限',
+    multiplier: 0.6, // 价格倍率
+    // 定义这个渠道每次给什么东西
+    package: { flour: 2, ghee: 2, vegetable: 2 }, 
+    // 动态计算价格函数
+    getPrice: function() {
+      let totalBasePrice = 0;
+      for (let [id, num] of Object.entries(this.package)) {
+        totalBasePrice += getMaterialInfo(id).basePrice * num;
       }
-    ];
+      // 计算结果：总原价 * 倍率，并向上取整
+      return Math.ceil(totalBasePrice * this.multiplier);
+    },
+    result: () => {
+      // 发放固定包裹
+      gainMaterial('flour', 2);
+      gainMaterial('ghee', 2);
+      gainMaterial('vegetable', 2);
+      
+      // 随机惊喜：兔子肉
+      if (Math.random() < 0.2) {
+        gainMaterial('meat', 1);
+        pushText('相熟的农户姨姨神神秘秘地递给你一包东西——是兔子肉！');
+      }
+    }
+  },
+  {
+    id: 'innkeeper', 
+    unlocked: true, 
+    label: '酒楼奸商',
+    desc: '食材齐全，但有溢价(1.2倍)',
+    multiplier: 1.2,
+    package: { flour: 2, ghee: 2, vegetable: 2, meat: 2 },
+    getPrice: function() {
+      let totalBasePrice = 0;
+      for (let [id, num] of Object.entries(this.package)) {
+         totalBasePrice += getMaterialInfo(id).basePrice * num;
+      }
+      return Math.ceil(totalBasePrice * this.multiplier);
+    },
+    result: () => {
+      gainMaterial('flour', 2);
+      gainMaterial('ghee', 2);
+      gainMaterial('vegetable', 2);
+      gainMaterial('meat', 2);
+
+      // 夜间概率触发折箩
+      if (isNight() && Math.random() < 0.4) {
+        triggerInnDiscardEvent();
+        return false; // 阻止直接刷新页面，进入分支
+      }
+    }
+  }
+];
 
 // 经营主按钮
 function showBusiness() {
   state = 'business';
-  let options = recipes.filter(p=>p.unlocked).map(p=>{
-    return { text: `卖${p.name}`, action: ()=>sell(p) };
-  });
+  //找到当前选中的菜谱对象并售卖
+  let selectedRecipe = recipes.find(r => r.id === selectedRecipeId && r.unlocked);//遍历寻找第一个既被选中id又已经解锁的对象
+  let mainBtn = selectedRecipe
+    ? [{ text: `卖${selectedRecipe.name}`,action: ()=>sell(selectedRecipe)}]
+    : [];//没有选中菜谱的时候，就没有按钮出现
   setActions([
-    ...options,
+    ...mainBtn,
     { text: '进货', action: shop },
     { text: '宣传', action: advertise },
+    { text: '研发', action: showResearchPanel },
     { text: '结束今日', action: endDay }
   ]);
 }
+
+//研发引入
+function showResearchPanel(){
+  state = 'research';//修改页面状态
+  renderResearchPanel();
+}
+
 
     // 炊饼售卖逻辑（材料消耗）
 function sell(product) {
@@ -66,7 +102,7 @@ function sell(product) {
   let earnReputation = 0;//声望变化值初始为0
   let text = `你叫卖${product.name}，路人纷纷驻足，你顺利卖出几份。`;
       // 新闻与时辰buff
-      if (product.id === "stuffed" && newsEffect.bigOrder && Math.random()<0.5 && timeIdx>=2) {//timeIdx>=2指酒楼一般不会大清早和上午来采购
+      if (product.id === "veggie" && newsEffect.bigOrder && Math.random()<0.5 && timeIdx>=2) {//timeIdx>=2指酒楼一般不会大清早和上午来采购
         earn += 6; log("酒楼大批采购，收益翻倍，+6两，声望+2");
         text='城里酒楼的主食不够了，派伙计来大批采购你的炊饼，今天赚得满满当当！';
         earnReputation = 2;
@@ -98,26 +134,29 @@ function sell(product) {
 
 // 进货系统
 function shop() {
+  // 动态生成按钮，显示动态计算的价格
   setActions(
-    purchaseChannels.filter(ch=>ch.unlocked).map(ch=>({
-      text: ch.label+"（"+ch.desc+"）",
-      action: ()=>purchase(ch)
-    })).concat([{text:'返回', action: showBusiness}])
+    purchaseChannels.filter(ch => ch.unlocked).map(ch => {
+      let currentPrice = ch.getPrice();
+      return {
+        text: `${ch.label} (${currentPrice}钱)`,
+        action: () => purchase(ch, currentPrice)
+      };
+    }).concat([{text:'返回', action: showBusiness}])
   );
   pushText('请选择进货渠道：');
 }
-    function purchase(channel) {
-      if (money < channel.price) {
+    function purchase(channel, cost) {
+      if (money < cost) {
         pushText("钱不够了，无法采购。");
         log('进货失败：余额不足');
-        showBusiness();
         return;
       }
-      money -= channel.price;
+      money -= cost;
       let branch = channel.result();
       update();
       if (branch === false) return; // 特殊分支事件已处理
-      pushText('进货完成！当前库存：'+Object.entries(materials).map(([k,v])=>`${k}:${v}`).join(' | '));
+      pushText(`向${channel.label}进货成功！消费${cost}文。`);
       log('进货成功。');
       showBusiness();
     }
@@ -139,8 +178,10 @@ function shop() {
 
     // 宣传，准备重写
     function advertise() {
-
+      pushText("还没想好怎么宣传……");
+      showBusiness();
     }
+
 
     // 时辰推进与夜晚重置
     function nextTime() {

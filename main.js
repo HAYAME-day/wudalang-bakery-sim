@@ -1,7 +1,7 @@
 // 状态变量和数据最初定义
 let money = 10, reputation = 10, day = 1, timeIdx = 0, state = 'business';
 const shichenArr = ["清晨", "上午", "中午", "午后", "夜晚"];
-let materials = { 面粉: 3, 酥油: 3, 蔬菜: 0, 肉: 0 };
+let materials = { flour: 3, ghee: 3, vegetable: 0, meat: 0 };
 let favors = [ { name: "金莲", value: 0 }, { name: "西门庆", value: 0 }, { name: "武松", value: 0 } ];
 
 let selectedRecipeId = 'basic';//初始化选中菜谱
@@ -110,9 +110,14 @@ tabBtns[1].onclick = () => {
 
     // 材料栏
     function renderMaterials() {
-      let arr = Object.entries(materials).map(([k,v])=>`${k}:${v}`);
-      document.getElementById('materials').textContent = '库存｜' + arr.join('　');
-    }
+  // 遍历 materials 对象
+  let arr = Object.entries(materials).map(([id, count]) => {
+    // 查字典获取中文名
+    const info = getMaterialInfo(id);
+    return `${info.name}:${count}`;
+  });
+  document.getElementById('materials').textContent = '库存｜' + arr.join('　');
+}
     // 动态配色，按照时间变更背景色
     function setThemeByTime() {
       let b = document.body, btns = document.querySelectorAll('#actions button');
@@ -154,15 +159,6 @@ tabBtns[1].onclick = () => {
       setThemeByTime();
     }
 
-//主研发点击
-document.getElementById('tab-research').onclick = function() {
-  // 隐藏其他内容，显示研发内容
-  document.getElementById('tab-content-materials').style.display = 'none';
-  document.getElementById('tab-content-recipes').style.display = 'none';
-  document.getElementById('tab-content-research').style.display = '';
-  renderResearchPanel(); // 每次点都刷新一下
-};
-
 
 
 
@@ -182,3 +178,10 @@ document.getElementById('news').textContent = "【今日街头新闻】今天的
 pushText('你整装待发，准备开启一天的生意。');
 update();
 showBusiness();  // 链接去businessEvents.js
+
+//菜谱选择进行售卖
+function selectRecipe(recipeId) {
+  selectedRecipeId = recipeId;
+  renderRecipeBook();
+  showBusiness();//要手动调用一次让主按钮mainBtn重新渲染一下
+}
