@@ -1,63 +1,68 @@
-// 进货渠道这一块
+//进货渠道这一块
+//进货需要分类定义，农户卖基础款，集市卖基础+偶尔出现高端，奸商只卖高端
+
 const purchaseChannels = [
   {
     id: 'farmer', 
-    unlocked: true, 
     label: '相熟农户',
-    desc: '价格便宜(6折)，但种类有限',
-    multiplier: 0.6, // 价格倍率
-    // 定义这个渠道每次给什么东西
-    package: { flour: 2, ghee: 2, vegetable: 2 }, 
-    // 动态计算价格函数
-    getPrice: function() {
-      let totalBasePrice = 0;
-      for (let [id, num] of Object.entries(this.package)) {
-        totalBasePrice += getMaterialInfo(id).basePrice * num;
-      }
-      // 计算结果：总原价 * 倍率，并向上取整
-      return Math.ceil(totalBasePrice * this.multiplier);
-    },
-    result: () => {
-      // 发放固定包裹
-      gainMaterial('flour', 2);
-      gainMaterial('ghee', 2);
-      gainMaterial('vegetable', 2);
-      
-      // 随机惊喜：兔子肉
-      if (Math.random() < 0.2) {
-        gainMaterial('meat', 1);
-        pushText('相熟的农户姨姨神神秘秘地递给你一包东西——是兔子肉！');
-      }
+    baseMultiplier: 0.6,
+    desc: '老实人，只卖地里长出来的东西。',
+    // 逻辑：筛选所有标签包含 "crop" 的物品
+    getInventory: () => materialsList
+      .filter(m => m.tags.includes('crop'))
+      .map(m => m.id)
+  },
+  {
+    id: 'market', 
+    label: '清晨集市',
+    baseMultiplier: 1.0, 
+    desc: '这里汇集了各种肉蛋和调料。',
+    // 逻辑：筛选 "animal"(畜产) 或 "condiment"(调料)
+    // 并且排除掉太高级的 "dairy"(奶制品) 以防和酒楼抢生意
+    getInventory: function() {
+      // 每天随机一下集市的货
+      return getDailyMarketInventory();
     }
   },
   {
     id: 'innkeeper', 
-    unlocked: true, 
     label: '酒楼奸商',
-    desc: '食材齐全，但有溢价(1.2倍)',
-    multiplier: 1.2,
-    package: { flour: 2, ghee: 2, vegetable: 2, meat: 2 },
-    getPrice: function() {
-      let totalBasePrice = 0;
-      for (let [id, num] of Object.entries(this.package)) {
-         totalBasePrice += getMaterialInfo(id).basePrice * num;
-      }
-      return Math.ceil(totalBasePrice * this.multiplier);
-    },
-    result: () => {
-      gainMaterial('flour', 2);
-      gainMaterial('ghee', 2);
-      gainMaterial('vegetable', 2);
-      gainMaterial('meat', 2);
-
-      // 夜间概率触发折箩
-      if (isNight() && Math.random() < 0.4) {
-        triggerInnDiscardEvent();
-        return false; // 阻止直接刷新页面，进入分支
-      }
-    }
+    baseMultiplier: 1.4, 
+    desc: '专门卖那些进口货、发酵品和高级奶制品。',
+    // 逻辑：筛选 "imported"(舶来), "fermented"(发酵), "dairy"(奶)
+    getInventory: () => materialsList
+      .filter(m => m.tags.includes('imported') || m.tags.includes('fermented') || m.tags.includes('dairy'))
+      .map(m => m.id)
   }
 ];
+
+// 2. 集市的伪随机逻辑 (配合标签系统)
+function getDailyMarketInventory() {
+  // 基础池：所有畜产品(肉蛋) + 调味品
+  let pool = materialsList.filter(m => 
+    (m.tags.includes('animal') || m.tags.includes('condiment')) && 
+    !m.tags.includes('dairy') && // 不卖高级奶
+    !m.tags.includes('imported') // 不卖进口货
+  );
+  
+  let dailyItems = [];
+  
+  // 遍历池子，根据天数决定今天卖不卖
+  pool.forEach((item, index) => {
+    // 基础肉蛋类(meat, egg)常驻，其他的随机出现
+    if (item.id === 'meat' || item.id === 'egg' || item.id === 'scallion') {
+      dailyItems.push(item.id);
+    } else {
+      // 伪随机：利用 sin 函数，保证同一天结果一致
+      let pseudoRandom = Math.sin(day * 100 + index);
+      if (pseudoRandom > -0.2) { // 70% 概率出现
+        dailyItems.push(item.id);
+      }
+    }
+  });
+  
+  return dailyItems;
+}
 
 // 经营主按钮
 function showBusiness() {
@@ -182,37 +187,3 @@ function shop() {
       showBusiness();
     }
 
-
-    // 时辰推进与夜晚重置
-    function nextTime() {
-      timeIdx++;
-      if(timeIdx>=shichenArr.length){
-        setTimeout(endDay,350);
-      } else {
-        showBusiness();
-      }
-      update();
-      triggerRandomEvent();
-    }
-    function endDay() {
-      day++;
-      timeIdx=0;
-      newsEffect = {};
-      // 新的新闻
-      let news = newsPool[Math.floor(Math.random() * newsPool.length)];
-      news.effect();
-      document.getElementById('news').textContent = "【今日街头新闻】" + news.txt;
-      pushText(`第${day}天清晨，你又要开始新一天的生意了。`);
-      log('新的一天开始了。');
-      // 腹泻负面事件判定
-      if (window.hasInnDiscard) {
-        if (Math.random()<0.5) {
-          pushText("次日清晨，有顾客腹泻，店铺声望下降！");
-          reputation -= 3;
-          log("腹泻事件：声望-3");
-        }
-        window.hasInnDiscard = false;
-      }
-      update();
-      showBusiness();
-    }

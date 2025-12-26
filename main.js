@@ -5,6 +5,8 @@ let materials = { flour: 3, ghee: 3, vegetable: 0, meat: 0 };
 let favors = [ { name: "金莲", value: 0 }, { name: "西门庆", value: 0 }, { name: "武松", value: 0 } ];
 
 let selectedRecipeId = 'basic';//初始化选中菜谱
+let marketVolatility = { farmer: 1.0, market: 1.0, innkeeper: 1.0 };//进货倍率变动初始化
+
 
 // 全局存储文本历史，现为20条
 const maxTextHistory = 20;
@@ -95,15 +97,63 @@ tabBtns[1].onclick = () => {
   renderRecipeBook();    // 重新渲染菜谱内容
 };
 
+//时间推进
+function nextTime() {
+  timeIdx++;
+  if(timeIdx >= shichenArr.length){
+    //如果过完了一天的最后一个时辰，延迟一小会儿进入下一天
+    setTimeout(endDay, 350);
+  } else {
+    //否则继续刷新经营界面
+    showBusiness();
+  }
+  update();
+  //可以加入随着时间推进触发的特殊事件
+}
+
+//每日结束，会调用一个均值回归函数calculateNextVolatility，放在main.js最下面
+function endDay() {
+  day++;
+  timeIdx = 0;
+  newsEffect();//清空前一天的新闻影响
+  marketVolatility.farmer = calculateNextVolatility(marketVolatility.farmer, 1.0, 0.05);//波动很小
+  marketVolatility.market = calculateNextVolatility(marketVolatility.market, 1.0, 0.15);//波动中等
+  marketVolatility.innkeeper = calculateNextVolatility(marketVolatility.innkeeper, 1.0, 0.3);//波动大大！
+
+//新闻逻辑
+  if(typeof newsPool !== 'undefined') {
+    let news = newsPool[Math.floor(Math.random() * newsPool.length)];
+    if(news && news.effect) news.effect();
+    let newsDom = document.getElementById('news');
+    if(newsDom) newsDom.textContent ="【今日街头新闻】" + news.text;
+      }
+
+      //价格波动提示
+      let trendText = "";
+      if (marketVolatility.innkeeper > 1.3) trendText = "（听说酒楼的进货价涨疯了！）";
+      else if (marketVolatility.innkeeper < 0.8) trendText = "（酒楼老板似乎在亏本甩卖...）";
+      else if (marketVolatility.farmer < 0.9 && marketVolatility.market > 1.1) trendText = "（农户那边还是老价钱，集市却涨了。）";
+
+      pushText(`第${day}天到了。${trendText}`);
+
+}
+
 
 // 初始化
     setTabVertical(0);
 //获取材料函数，是用于确保曾经获取过的材料都会体现在页面里，如果获取过但是数量为0则为灰色
-    function gainMaterial(name, num) {
-      if (materials[name] == null) materials[name] = 0;//先检查是否已有，如果没有就先定义为0
-      materials[name] += num;
-      if (materials[name] < 0) materials[name] = 0; // 不让材料变成负数
-      update(); 
+    function gainMaterial(id, num) {
+      if (materials[id] == undefined)
+      {
+        materials[id] = 0;//初次获得食材初始化
+      } 
+      let info = getMaterialInfo(id);
+      let bigIcon = `<img src="${info.img} style="width:32px;height:32px;vertical-align:buttom;margin:0 4px;border-radius:4px;">`;//新发现提示图片
+      pushText(`【新发现】你第一次获取了食材：${bigIcon}<b>${info.name}!背包已解锁该栏位。`);
+
+      materials[id] += num;
+      if(materials[id] < 0) materials[id] = 0;//禁止负数
+      update();
 }
 
 
@@ -184,4 +234,14 @@ function selectRecipe(recipeId) {
   selectedRecipeId = recipeId;
   renderRecipeBook();
   showBusiness();//要手动调用一次让主按钮mainBtn重新渲染一下
+}
+
+//辅助算法函数，类似股市，但不同的商户取不同的波动幅度
+function calculateNextVolatility(current, target = 1.0) {
+  let charge = (Math.random() - 0.5) * (range * 2);//在-0.1到+0.1之间波动
+  //均值回归
+  let gravity = (target - current) * 0.15;
+  let next = current + change + gravity;
+  //防止极端价格
+  return Math.max(0.5, Math.min(2.5, next));
 }
