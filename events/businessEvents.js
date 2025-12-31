@@ -1,6 +1,14 @@
 //进货渠道这一块
 //进货需要分类定义，农户卖基础款，集市卖基础+偶尔出现高端，奸商只卖高端
+//需要记录今天已经在各个进货商买了多少东西，以扣减库存
+let dailyShopHistory = {};
 
+//当前购物车状态
+let currentCart = {};
+let currentMerchantId = null;
+let currentMultiplier = 1.0;
+
+//商家定义，考虑后期加入第四商家卖股票之类的
 const purchaseChannels = [
   {
     id: 'farmer', 
@@ -8,61 +16,66 @@ const purchaseChannels = [
     baseMultiplier: 0.6,
     desc: '老实人，只卖地里长出来的东西。',
     // 逻辑：筛选所有标签包含 "crop" 的物品
-    getInventory: () => materialsList
-      .filter(m => m.tags.includes('crop'))
-      .map(m => m.id)
+    getInventoryData: function() {
+      //库存随机设置数量在限定范围内
+      return materialsList
+        .filter(m => m.tags.includes('crop'))
+        .map(m => ({ id: m.id, stockRange: [20,35]}));
+    }
   },
   {
     id: 'market', 
     label: '清晨集市',
     baseMultiplier: 1.0, 
-    desc: '这里汇集了各种肉蛋和调料。',
-    // 逻辑：筛选 "animal"(畜产) 或 "condiment"(调料)
-    // 并且排除掉太高级的 "dairy"(奶制品) 以防和酒楼抢生意
-    getInventory: function() {
-      // 每天随机一下集市的货
-      return getDailyMarketInventory();
-    }
+    desc: '应有尽有，那是肉铺还是洋货？碰碰运气吧。',
+    // 筛选：蔬菜+畜产品+奶制品+调料
+    getInventoryData: function() {
+      return materialsList.filter(m => {
+      //必定出现老五样
+      const staples = ['flour', 'vegetable', 'meat', 'egg', 'scallion'];
+      if (staples.includes(m.id)) return true;
+
+      //随机数
+      let idSum = m.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      let seed = day * 137 +idSum;
+      let rng = Math.abs(Math.sin(seed));//得到0到1之间的随机数
+
+      //稀有货物20%概率出现：舶来品、发酵品
+      if (m.tags.includes('imported') || m.tags.includes('fermented')) {
+        return rng < 0.2;
+      }
+
+      //普通货物60%概率出现：奶制品、调味品、水果等
+      return rng < 0.6;
+    }).map(m => {
+      let stockMin = 10, stockMax = 25;
+      //如果是稀有标签，刷出来的库存也更少一点
+      if (m.tags.includes('imported') || m.tags.includes('fermented')) {
+        stockMin = 3;
+        stockMax = 8;
+      }
+      return {
+        id: m.id,
+        stockRange: [stockMin, stockMax]
+      };
+    });
+  }
   },
   {
     id: 'innkeeper', 
     label: '酒楼奸商',
-    baseMultiplier: 1.4, 
-    desc: '专门卖那些进口货、发酵品和高级奶制品。',
-    // 逻辑：筛选 "imported"(舶来), "fermented"(发酵), "dairy"(奶)
-    getInventory: () => materialsList
-      .filter(m => m.tags.includes('imported') || m.tags.includes('fermented') || m.tags.includes('dairy'))
-      .map(m => m.id)
+    baseMultiplier: 1.6, // 贵
+    desc: '专门卖稀奇古怪的进口货和高级品。',
+    //进口货+发酵品
+    getInventoryData: function() {
+      return materialsList
+        .filter(m => m.tags.includes('imported') || m.tags.includes('fermented'))
+        .map(m => ({ id: m.id, stockRange: [7, 20] })); //库存尚可
+    }
   }
 ];
 
-// 2. 集市的伪随机逻辑 (配合标签系统)
-function getDailyMarketInventory() {
-  // 基础池：所有畜产品(肉蛋) + 调味品
-  let pool = materialsList.filter(m => 
-    (m.tags.includes('animal') || m.tags.includes('condiment')) && 
-    !m.tags.includes('dairy') && // 不卖高级奶
-    !m.tags.includes('imported') // 不卖进口货
-  );
-  
-  let dailyItems = [];
-  
-  // 遍历池子，根据天数决定今天卖不卖
-  pool.forEach((item, index) => {
-    // 基础肉蛋类(meat, egg)常驻，其他的随机出现
-    if (item.id === 'meat' || item.id === 'egg' || item.id === 'scallion') {
-      dailyItems.push(item.id);
-    } else {
-      // 伪随机：利用 sin 函数，保证同一天结果一致
-      let pseudoRandom = Math.sin(day * 100 + index);
-      if (pseudoRandom > -0.2) { // 70% 概率出现
-        dailyItems.push(item.id);
-      }
-    }
-  });
-  
-  return dailyItems;
-}
+
 
 // 经营主按钮
 function showBusiness() {
@@ -137,33 +150,34 @@ function sell(product) {
       nextTime();
     }
 
-// 进货系统
-function shop() {
-  // 动态生成按钮，显示动态计算的价格
-  setActions(
-    purchaseChannels.filter(ch => ch.unlocked).map(ch => {
-      let currentPrice = ch.getPrice();
-      return {
-        text: `${ch.label} (${currentPrice}钱)`,
-        action: () => purchase(ch, currentPrice)
-      };
-    }).concat([{text:'返回', action: showBusiness}])
-  );
-  pushText('请选择进货渠道：');
-}
-    function purchase(channel, cost) {
-      if (money < cost) {
-        pushText("钱不够了，无法采购。");
-        log('进货失败：余额不足');
-        return;
-      }
-      money -= cost;
-      let branch = channel.result();
-      update();
-      if (branch === false) return; // 特殊分支事件已处理
-      pushText(`向${channel.label}进货成功！消费${cost}文。`);
-      log('进货成功。');
-      showBusiness();
+//新的进货系统，准备修改为按需进货模式
+    function shop() {
+      pushText("今天要光顾哪家商铺？（行情每日浮动）");
+
+  // 1. 直接 map，不要 filter(ch => ch.unlocked) 了！
+      let buttons = purchaseChannels.map(ch => {
+    // 获取 main.js 里算好的今日指数
+        let volatility = marketVolatility[ch.id] || 1.0;
+
+    // 新闻特殊影响
+        if (newsEffect && newsEffect.cheapGoods && ch.id === 'market') volatility *= 0.8; 
+
+    // 最终倍率
+        let currentMultiplier = ch.baseMultiplier * volatility;
+
+    // 涨跌标签
+        let tag = "";
+        if (volatility < 0.95) tag = "【🔻降价】";
+        else if (volatility > 1.05) tag = "【🔺涨价】";
+
+        return {
+          text: `${ch.label} ${tag}`,
+          action: () => openShopUI(ch, currentMultiplier)
+        };
+      });
+
+      buttons.push({ text: '返回经营', action: showBusiness });
+      setActions(buttons);
     }
 
     // 夜间折箩事件
@@ -187,3 +201,211 @@ function shop() {
       showBusiness();
     }
 
+//打开商店界面
+function openShopUI(channel, multiplier) {
+  currentMerchantId = channel.id;
+  currentMultiplier = multiplier;
+  currentCart = {};//购物车清空
+  //计算今日总库存-今日已买过的数量
+  let rawItems = channel.getInventoryData();
+  //存储本次库存
+  let inventory = rawItems.map(item => {
+    //按照day和itemId保持同一天库存不变
+    let seed = day * 1000 + item.id.length *10;
+    //分步运算，不要把小括号混到一起
+    let range = item.stockRange[1] - item.stockRange[0];
+    let ratio = (Math.sin(seed) + 1) /2;
+    let stockBase = Math.floor(ratio * range +item.stockRange[0]);
+
+    let historyKey = `day_${day}`;//生成一个标识日期的字符串day_1
+    let bought = 0;
+    if (dailyShopHistory[historyKey] && dailyShopHistory[historyKey][channel.id]) {//确认已存在今天这一页，确认已存在今天在某商家处购买，才能存在购买历史
+      bought = dailyShopHistory[historyKey][channel.id][item.id] || 0;
+    }
+    return {
+      id: item.id,
+      maxStock: Math.max(0, stockBase - bought)//剩余库存计算
+    };
+  });
+    window._tempInventory = inventory;//存入全局变量，在调用addToCart购物车时刷新
+
+    let oldOverlay = document.getElementById('shop-overlay');
+    if (oldOverlay) oldOverlay.remove();
+
+    let overlay = document.createElement('div');
+    overlay.id = 'shop-overlay';
+
+    //价格指数
+    let priceIndex = Math.round(multiplier * 100);
+    let priceColor = priceIndex > 100 ? '#ff6b6b' : '#51cf66';//贵的就显示红色，便宜的就显示绿色
+
+    //html结构渲染
+    overlay.innerHTML = `
+    <div class="shop-header">
+      <div>
+        <span style="font-size:1.2em;font-weight:bold">${channel.label}</span>
+        <span style="margin-left:10px;color:#aaa">${channel.desc}</span>
+      </div>
+      <div>
+        价格指数：<span style="color:${priceColor}">${priceIndex}%</span>
+        <button class="close-btn" onclick="closeShopUI()">关闭</button>
+      </div>
+    </div>
+
+    <div class="shop-body">
+      <div class="shop-left">
+        <div class="goods-grid" id="shop-goods-list"></div>
+      </div>
+      
+      <div class="shop-right">
+        <h3 style="border-bottom:1px solid #555;padding-bottom:5px;margin-top:0">购物篮</h3>
+        <div class="cart-list" id="shop-cart-list">
+          <div style="color:#666;text-align:center;margin-top:20px">篮子是空的</div>
+        </div>
+        <div class="shop-footer">
+          <div style="margin-bottom:10px">
+            总计：<span id="cart-total-price" style="color:#ffcc00;font-size:1.2em">0</span> 文
+            <br><span style="font-size:0.8em;color:#aaa">钱包余额：${money} 文</span>
+          </div>
+          <button id="btn-checkout" class="checkout-btn" disabled onclick="checkout()">结账</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  //商品列表渲染
+  renderGoodsGrid(inventory);
+}
+
+//购物系统左侧商品网格
+function renderGoodsGrid(inventory) {
+  let container = document.getElementById('shop-goods-list');
+  container.innerHTML = '';
+
+  inventory.forEach(item => {
+    let info = getMaterialInfo(item.id);
+    let price = Math.ceil(info.basePrice * currentMultiplier);//向上取整避免小数
+    //玩家现有库存
+    let playerStock = materials[item.id] || 0;
+    //购物车现有
+    let inCart = currentCart[item.id] || 0;
+    let displayStock = item.maxStock - inCart;
+
+    let div = document.createElement('div');
+    div.className = 'goods-item';
+
+    //库存没有了的场合
+    if (displayStock <= 0) {
+      div.style.opacity = '0.4';
+      div.style.cursor = 'not-allowed';
+    } else {
+      div.onclick = () => addToCart(item.id, price, item.maxStock);
+    }
+    div.innerHTML = `
+      <img src="${info.img}" class="goods-img">
+      <div style="font-weight:bold">${info.name}</div>
+      <div class="price-tag">${price} 文</div>
+      <div class="stock-tag">余:${displayStock} | 持:${playerStock}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+//加入购物车交互
+window.addToCart = function(id, price, maxStock) {
+  if (!currentCart[id]) currentCart[id] = 0;
+  //检查是否超过最大库存
+  if (currentCart[id] < maxStock) {
+    currentCart[id]++;
+    updateCartDisplay();
+    //更新左侧的余量显示
+    renderGoodsGrid(window._tempInventory);
+  }
+};
+//右侧购物车显示
+function updateCartDisplay() {
+  let container = document.getElementById('shop-cart-list');
+  let totalSpan = document.getElementById('cart-total-price');
+  let btn = document.getElementById('btn-checkout');
+
+  container.innerHTML = '';
+  let total = 0;
+  let count = 0;
+
+  for (let id in currentCart) {
+    let num = currentCart[id];
+    if (num > 0) {
+      let info = getMaterialInfo(id);
+      let price = Math.ceil(info.basePrice * currentMultiplier);
+      let cost = price * num;
+      total += cost;
+      count++;
+
+      let row = document.createElement('div');
+      row.className = 'cart-item-row';
+      row.innerHTML = `
+        <span>${info.name} x${num}</span>
+        <span style="color:#ccc">${cost}文</span>
+      `;
+      container.appendChild(row);
+    }
+  }
+  totalSpan.textContent = total;
+  //余额不足的场合
+  if (total > money) {
+    totalSpan.style.color = '#ff4d4f';
+    btn.textContent = "余额不足";
+    btn.disabled = true;
+    btn.style.background = '#555';
+  } else if (count ===0) {
+    btn.textContent = "结账";
+    btn.disabled = true;
+  } else {
+    totalSpan.style.color = '#ffcc00';
+    btn.textContent = `支付${total}文钱`;
+    btn.disabled = false;
+    btn.style.background = '#4CAF50';
+  }
+}
+
+//结账的逻辑部分
+window.checkout = function() {
+  let total = 0;
+  for (let id in currentCart) {
+    let info = getMaterialInfo(id);
+    let price = Math.ceil(info.basePrice * currentMultiplier);
+    total += price * currentCart[id];
+  }
+  if (money < total) return;
+
+  //先扣钱再加玩家已有的库存
+  money -= total;
+  let historyKey = `day_${day}`;
+  if (!dailyShopHistory[historyKey]) dailyShopHistory[historyKey] = {};//如果day_1这样的key不存在就创建一个
+  if (!dailyShopHistory[historyKey][currentMerchantId]) dailyShopHistory[historyKey][currentMerchantId] = {};//如果当前商家的key不存在就创建一个
+
+  let logMsg = [];
+
+  for (let id in currentCart) {
+    let num = currentCart[id];
+    if (num > 0) {
+      //调用main.js的通用加货函数 (触发新发现)
+      gainMaterial(id, num);
+      //记录今日已买，防止刷库存
+      let oldBought = dailyShopHistory[historyKey][currentMerchantId][id] || 0;
+      dailyShopHistory[historyKey][currentMerchantId][id] = oldBought + num;
+      
+      let name = getMaterialInfo(id).name;
+      logMsg.push(`${name}x${num}`);
+    }
+  }
+  //文本框显示
+  pushText(`采购完成！共花费${total}文，买入:${logMsg.join(',')}`);
+  closeShopUI();
+  update();//更新主界面金钱显示
+};
+window.closeShopUI = function() {
+  let overlay = document.getElementById('shop-overlay');
+  if (overlay) overlay.remove();
+};

@@ -1,12 +1,12 @@
 // 状态变量和数据最初定义
-let money = 10, reputation = 10, day = 1, timeIdx = 0, state = 'business';
+let money = 100, reputation = 10, day = 1, timeIdx = 0, state = 'business';
 const shichenArr = ["清晨", "上午", "中午", "午后", "夜晚"];
 let materials = { flour: 3, ghee: 3, vegetable: 0, meat: 0 };
 let favors = [ { name: "金莲", value: 0 }, { name: "西门庆", value: 0 }, { name: "武松", value: 0 } ];
 
 let selectedRecipeId = 'basic';//初始化选中菜谱
 let marketVolatility = { farmer: 1.0, market: 1.0, innkeeper: 1.0 };//进货倍率变动初始化
-
+let newsEffect = {};
 
 // 全局存储文本历史，现为20条
 const maxTextHistory = 20;
@@ -115,7 +115,7 @@ function nextTime() {
 function endDay() {
   day++;
   timeIdx = 0;
-  newsEffect();//清空前一天的新闻影响
+  newsEffect = {};//清空前一天的新闻影响
   marketVolatility.farmer = calculateNextVolatility(marketVolatility.farmer, 1.0, 0.05);//波动很小
   marketVolatility.market = calculateNextVolatility(marketVolatility.market, 1.0, 0.15);//波动中等
   marketVolatility.innkeeper = calculateNextVolatility(marketVolatility.innkeeper, 1.0, 0.3);//波动大大！
@@ -143,14 +143,16 @@ function endDay() {
     setTabVertical(0);
 //获取材料函数，是用于确保曾经获取过的材料都会体现在页面里，如果获取过但是数量为0则为灰色
     function gainMaterial(id, num) {
-      if (materials[id] == undefined)
+      if (materials[id] == undefined)//undefined说明是第一次获得的
       {
         materials[id] = 0;//初次获得食材初始化
-      } 
-      let info = getMaterialInfo(id);
-      let bigIcon = `<img src="${info.img} style="width:32px;height:32px;vertical-align:buttom;margin:0 4px;border-radius:4px;">`;//新发现提示图片
-      pushText(`【新发现】你第一次获取了食材：${bigIcon}<b>${info.name}!背包已解锁该栏位。`);
 
+        let info = getMaterialInfo(id);
+        let bigIcon = `<img src="${info.img}" style="width:32px;height:32px;vertical-align:bottom;margin:0 4px;border-radius:4px;">`;//新发现提示图片
+        pushText(`【新发现】你第一次获取了食材：${bigIcon}<b>${info.name}!背包已解锁该栏位。`);
+
+      } 
+      
       materials[id] += num;
       if(materials[id] < 0) materials[id] = 0;//禁止负数
       update();
@@ -213,21 +215,6 @@ function endDay() {
 
 
 
-// 侧栏逻辑
-const sidebar = document.getElementById('sidebar');
-document.getElementById('sidebar-btn').onclick = function () {
-  sidebar.classList.toggle('active');
-}
-sidebar.onclick = function (e) {
-  if (e.target === sidebar) sidebar.classList.remove('active');
-}
-
-
-// 页面初始化
-document.getElementById('news').textContent = "【今日街头新闻】今天的街道很热闹，要开始卖炊饼了！";
-pushText('你整装待发，准备开启一天的生意。');
-update();
-showBusiness();  // 链接去businessEvents.js
 
 //菜谱选择进行售卖
 function selectRecipe(recipeId) {
@@ -237,11 +224,36 @@ function selectRecipe(recipeId) {
 }
 
 //辅助算法函数，类似股市，但不同的商户取不同的波动幅度
-function calculateNextVolatility(current, target = 1.0) {
-  let charge = (Math.random() - 0.5) * (range * 2);//在-0.1到+0.1之间波动
+function calculateNextVolatility(current, target = 1.0, range = 0.1) {
+  let change = (Math.random() - 0.5) * (range * 2);//在-0.1到+0.1之间波动
   //均值回归
   let gravity = (target - current) * 0.15;
   let next = current + change + gravity;
   //防止极端价格
   return Math.max(0.5, Math.min(2.5, next));
+}
+//gemini给的初始化执行部分
+setTabVertical(0);
+// 侧栏逻辑
+const sidebar = document.getElementById('sidebar');
+const sidebarBtn = document.getElementById('sidebar-btn');
+if(sidebar && sidebarBtn) {
+  sidebarBtn.onclick = function () {
+    sidebar.classList.toggle('active');
+  }
+  sidebar.onclick = function (e) {
+    if (e.target === sidebar) sidebar.classList.remove('active');
+  }
+}
+
+// 启动
+let newsDom = document.getElementById('news');
+if(newsDom) newsDom.textContent = "【今日街头新闻】今天的街道很热闹，要开始卖炊饼了！";
+pushText('你整装待发，准备开启一天的生意。');
+update();
+// 确保 businessEvents.js 已加载后再调用
+if (typeof showBusiness === 'function') {
+    showBusiness();
+} else {
+    console.warn("businessEvents.js 尚未加载，请确保在 index.html 中正确引用。");
 }
