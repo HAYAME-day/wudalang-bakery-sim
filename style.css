@@ -254,3 +254,317 @@ h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
   border-radius: 4px;
   cursor: pointer;
 }
+/* --- 研发实验室样式 --- */
+.research-container {
+    display: flex;
+    height: 100%;
+    gap: 20px;
+}
+.research-left {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+}
+.research-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* 研发槽位区 */
+.slots-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.research-slot {
+    width: 80px;
+    height: 80px;
+    border: 2px dashed #666;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    position: relative;
+}
+.research-slot.drag-over {
+    border-color: #ffcc00;
+    background: rgba(255, 204, 0, 0.1);
+    transform: scale(1.05);
+}
+.research-slot.filled {
+    border: 2px solid #888;
+    background: rgba(255, 255, 255, 0.1);
+}
+.slot-img {
+    width: 48px;
+    height: 48px;
+    pointer-events: none; /* 防止图片阻挡拖拽事件 */
+}
+.slot-remove {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: #ff4d4f;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    cursor: pointer;
+    font-size: 12px;
+    display: none;
+}
+.research-slot:hover .slot-remove {
+    display: block;
+}
+
+/* 提示与按钮 */
+.research-hint {
+    height: 40px;
+    color: #aaa;
+    font-style: italic;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.research-btn {
+    padding: 10px 30px;
+    font-size: 1.2em;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    opacity: 0.5;
+    pointer-events: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+.research-btn.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-2px);
+}
+.research-btn:active {
+    transform: translateY(0);
+}
+
+/* 可拖拽的食材 */
+.draggable-item {
+    cursor: grab;
+    transition: transform 0.2s;
+    position: relative;
+}
+.draggable-item:active {
+    cursor: grabbing;
+}
+.draggable-item:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.1);
+}
+.draggable-item.used {
+    opacity: 0.3;
+    filter: grayscale(100%);
+    pointer-events: none;
+}
+
+/* 🎉 成功弹窗动画 */
+@keyframes popIn {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    80% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.unlock-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+.unlock-modal {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    background: linear-gradient(135deg, #fff9f2 0%, #ffe3b2 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(255, 204, 0, 0.5);
+    border: 4px solid #fff;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    color: #543b0b;
+}
+.unlock-title {
+    font-size: 1.5em;
+    color: #d35400;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+.unlock-img {
+    width: 128px;
+    height: 128px;
+    margin: 10px auto;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+}
+.unlock-name {
+    font-size: 1.8em;
+    margin: 10px 0;
+    font-weight: bold;
+}
+.unlock-btn {
+    background: #d35400;
+    color: white;
+    border: none;
+    padding: 10px 40px;
+    border-radius: 20px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+/* --- 侧边栏：图形化菜谱书 (追加在style.css末尾) --- */
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 一行3个，嫌挤可以改成2 */
+    gap: 8px;
+    padding: 0 5px;
+}
+
+.recipe-icon-card {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 8px;
+    padding: 10px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.recipe-icon-card:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* 选中状态：金色边框 + 稍微高亮 */
+.recipe-icon-card.selected {
+    border-color: #ffcc00;
+    background: #fffdf9;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+/* 未解锁状态 */
+.recipe-icon-card.locked {
+    background: rgba(0, 0, 0, 0.03);
+    cursor: not-allowed;
+    opacity: 0.6;
+    filter: grayscale(100%);
+}
+
+.icon-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 5px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recipe-img {
+    max-width: 100%;
+    max-height: 100%;
+    /* 配合透明图的投影，让它立体一点 */
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
+
+.check-mark {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #ffcc00;
+    color: #fff;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 10px;
+    line-height: 16px;
+    font-weight: bold;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.recipe-name {
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #4a4a4a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recipe-price {
+    font-size: 0.75em;
+    color: #d35400;
+    margin-top: 2px;
+}
+/* --- 气泡提示样式 (追加在 style.css 末尾) --- */
+.hint-bubble {
+    position: fixed; /* 固定在屏幕上，不随滚动条跑 */
+    background: #fff;
+    border: 2px solid #543b0b; /* 这种深褐色很有古风感 */
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #543b0b;
+    font-size: 0.85em;
+    font-weight: bold;
+    z-index: 9999; /* 确保在最上层 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    pointer-events: none; /* 让气泡不阻挡点击，点穿过去 */
+    
+    /* 核心定位：水平居中，垂直向上偏移 */
+    transform: translate(-50%, -100%); 
+    
+    /* 弹出的动画 */
+    animation: bubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 220px; /* 防止字太多太宽 */
+    text-align: center;
+    transition: opacity 0.3s;
+}
+
+/* 气泡下面的小三角 */
+.hint-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px; /* 挂在屁股下面 */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0; /* 画三角形 */
+    border-style: solid;
+    border-color: #543b0b transparent transparent transparent;
+}
+
+/* 砰！弹出来的动画 */
+@keyframes bubblePop {
+    from { 
+        transform: translate(-50%, -80%) scale(0.5); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translate(-50%, -100%) scale(1); 
+        opacity: 1; 
+    }
+}
