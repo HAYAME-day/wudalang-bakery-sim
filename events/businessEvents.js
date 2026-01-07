@@ -80,11 +80,22 @@ const purchaseChannels = [
 // 经营主按钮
 function showBusiness() {
   state = 'business';
-  //找到当前选中的菜谱对象并售卖
-  let selectedRecipe = recipes.find(r => r.id === selectedRecipeId && r.unlocked);//遍历寻找第一个既被选中id又已经解锁的对象
-  let mainBtn = selectedRecipe
-    ? [{ text: `卖${selectedRecipe.name}`,action: ()=>sell(selectedRecipe)}]
-    : [];//没有选中菜谱的时候，就没有按钮出现
+  //由单个selectedRecipeId转为数组
+  let hasSelection = selectedRecipeIds && selectedRecipeIds.length > 0;
+
+  let mainBtn = hasSelection
+    ? [{ 
+        text: `准备开张 (已选${selectedRecipeIds.length}种)`, 
+        //样式微调
+        style: "background:#d35400; font-weight:bold; border:2px solid #fff;", 
+        action: openBusinessPrepUI //跳转到确认窗口
+      }]
+    : [{ 
+        text: "请先在左侧选择商品", 
+        style: "background:#ccc; color:#666; cursor:not-allowed;",
+        action: () => pushText("请先点击左侧的【食谱】，选几个今天要卖的东西吧。") 
+      }];
+
   setActions([
     ...mainBtn,
     { text: '进货', action: shop },
@@ -93,6 +104,97 @@ function showBusiness() {
     { text: '结束今日', action: endDay }
   ]);
 }
+//开业前的确认窗口（包含计算函数用于计算玩家上架的菜谱按照材料来算最多能做多少份
+function calculateMaxCraftable(recipe) {
+    if (!materials) return 0;
+    let maxCount = Infinity;
+    for (let key in recipe.recipe) {
+        let required = recipe.recipe[key];
+        let owned = materials[key] || 0;
+        let count = Math.floor(owned / required);
+        if (count < maxCount) maxCount = count;
+    }
+    //理论上不存在空配方，但是还是需要防止极端情况
+    return maxCount === Infinity ? 0 : maxCount;
+}
+
+function openBusinessPrepUI() {
+    let overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.background = 'rgba(0,0,0,0.7)';
+    overlay.style.zIndex = '2000';
+    
+    let selectedRecipes = selectedRecipeIds.map(id => recipes.find(r => r.id === id));
+    
+    let itemsHtml = selectedRecipes.map(r => {
+        // ★ 计算最大制作量
+        let maxCount = calculateMaxCraftable(r);
+        // 库存告急变色提醒
+        let countColor = maxCount < 5 ? '#ff4d4f' : '#4CAF50';
+        let stockTip = maxCount === 0 
+            ? '<span style="color:#ff4d4f;font-weight:bold">缺货! (0份)</span>' 
+            : `<span style="color:${countColor}">预计可做: ${maxCount}份</span>`;
+
+        return `
+        <div style="display:flex; align-items:center; background:rgba(255,255,255,0.1); padding:10px; margin-bottom:8px; border-radius:8px;">
+            <img src="${r.img}" style="width:40px; height:40px; margin-right:10px;">
+            <div style="flex:1; text-align:left;">
+                <div style="display:flex;justify-content:space-between">
+                    <span style="font-weight:bold; color:#ffcc00;">${r.name}</span>
+                    <span style="font-size:0.9em;">${stockTip}</span>
+                </div>
+                <div style="font-size:0.8em; color:#ccc; margin-top:4px;">
+                    需: ${getRecipeIngredientsText(r)} | 标签: ${r.tags.join(', ')}
+                </div>
+            </div>
+        </div>
+    `}).join('');
+
+    overlay.innerHTML = `
+        <div class="shop-body" style="max-width:400px; max-height:80vh; display:flex; flex-direction:column; background:#3e2723; border:2px solid #d35400;">
+            <div class="shop-header" style="text-align:center; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <span style="font-size:1.3em; font-weight:bold; color:#fff;">📋 今日备货核对</span>
+            </div>
+            
+            <div style="flex:1; overflow-y:auto; padding:15px; color:#fff;">
+                <p style="text-align:center; color:#aaa; margin-top:0;">大郎，看看咱家库存够不够？</p>
+                ${itemsHtml}
+                <div style="margin-top:20px; font-size:0.9em; background:rgba(0,0,0,0.2); padding:10px; border-radius:5px;">
+                    💡 <b>经营提示：</b><br>
+                    如果某个菜只能做 0 份，千万别开张！会被客人骂死的！<br>
+                    请先去【进货】补充原材料。
+                </div>
+            </div>
+
+            <div class="shop-footer" style="display:flex; gap:10px; padding:15px; border-top:1px solid rgba(255,255,255,0.1);">
+                <button id="btn-cancel-prep" class="close-btn" style="flex:1;">再调整下</button>
+                <button id="btn-start-business" class="unlock-btn" style="flex:2;">吉时已到，开张！</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('btn-cancel-prep').onclick = () => overlay.remove();
+    
+    document.getElementById('btn-start-business').onclick = () => {
+        // 简单检查一下是否所有菜都是0份
+        let allZero = selectedRecipes.every(r => calculateMaxCraftable(r) === 0);
+        if(allZero) {
+            pushText("大郎！咱啥材料都没有，开张卖空气吗？先去进货吧！");
+            return;
+        }
+
+        overlay.remove();
+        if (typeof startCounterGame === 'function') {
+            startCounterGame();
+        }
+    };
+}
+
 
 //研发引入
 function showResearchPanel(){

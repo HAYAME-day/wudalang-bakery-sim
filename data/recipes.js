@@ -1,4 +1,11 @@
 //菜谱数据结构
+
+//为每个菜谱添加特性标签以供经营使用
+// 标签说明：
+// 口味: sweet(甜), salty(咸), spicy(辣), milky(奶香)
+// 特性: filling(管饱), snack(零食), dainty(精致), rich(油润), light(清淡)
+// 档次: luxury(奢华), basic(基础)
+// 场景: festival(节日)
 const recipes = [
 {
 	id: 'basic',//每个菜谱都要有唯一的标识
@@ -6,6 +13,7 @@ const recipes = [
 	unlocked: true,
 	price: 6,
 	recipe: { flour: 1, ghee: 1},//面粉+酥油
+  tags: ["filling", "basic", "salty"],
 	hint: "经典之选，大众喜爱",
 	unlockType: 'normal',
 	unlockFavor: null,
@@ -17,6 +25,7 @@ const recipes = [
 	unlocked: false,
 	price: 10,
 	recipe: { flour: 1, ghee: 1, vegetable: 1},//面粉+酥油+蔬菜
+  tags: ["salty", "light", "veggie"],
 	hint: "普通炊饼加点野菜进去烤脆一点会好吃吗？",
 	unlockType: 'normal',
 	unlockFavor: null,
@@ -28,6 +37,7 @@ const recipes = [
 	unlocked: false,
 	price: 26,
 	recipe: { flour: 1, butter: 1, milk: 1},//面粉+黄油+牛奶
+  tags: ["sweet", "milky", "soft", "luxury"],
 	hint: "比酥油更高端的那种动物油，据说再来点奶就能变成软到不可思议的云朵之饼！",
 	unlockType: 'normal',
 	unlockFavor: null,
@@ -39,6 +49,7 @@ const recipes = [
     unlocked: false,
     price: 15, 
     recipe: { flour: 1, ghee: 1, sugar: 1 },//面粉+酥油+糖块
+    tags: ["sweet", "dainty", "snack"],
     hint: "面粉与酥油的层叠艺术，再来点甜味提鲜。",
     unlockType: 'normal',
     img: "images/recipes/layer.png"
@@ -49,6 +60,7 @@ const recipes = [
     unlocked: false,
     price: 22, 
     recipe: { flour: 1, bakingSoda: 1, ghee: 1 },//面粉+苏打粉+酥油
+    tags: ["salty", "dry", "snack"],
     hint: "面粉、油脂和那种白色粉末的奇妙反应。",
     unlockType: 'normal',
     img: "images/recipes/soda.png"
@@ -59,6 +71,7 @@ const recipes = [
     unlocked: false,
     price: 15, 
     recipe: { flour: 1, ghee: 1, scallion: 1 },//面粉+酥油+大葱
+    tags: ["salty", "aromatic", "snack"],
     hint: "葱花碰上热油，激发出最纯粹的香味。",
     unlockType: 'normal',
     img: "images/recipes/scallion.png"
@@ -69,6 +82,7 @@ const recipes = [
     unlocked: false,
     price: 26, 
     recipe: { flour: 1, scallion: 1, bakingSoda: 1 },//面粉+大葱+苏打粉
+    tags: ["salty", "fluffy", "filling"],
     hint: "想吃软乎的？试试用苏打粉发面，卷上葱花蒸。",
     unlockType: 'normal',
     img: "images/recipes/scallion_roll.png"
@@ -79,6 +93,7 @@ const recipes = [
     unlocked: false,
     price: 18, 
     recipe: { flour: 1, ghee: 1, chili: 1 },//面粉+酥油+辣椒
+    tags: ["spicy", "salty", "snack"],
     hint: "酥油饼上撒把辣椒，劲爆爽口。",
     unlockType: 'normal',
     img: "images/recipes/spicy.png"
@@ -89,6 +104,7 @@ const recipes = [
     unlocked: false,
     price: 22, 
     recipe: { flour: 1, meat: 1, scallion: 1 }, //面粉+肉+大葱
+    tags: ["meat", "filling", "salty", "rich"],
     hint: "肉和葱是绝配，裹进面皮里烤得滋滋冒油。",
     unlockType: 'normal',
     img: "images/recipes/meat.png"
@@ -99,6 +115,7 @@ const recipes = [
     unlocked: false,
     price: 14, 
     recipe: { flour: 1, egg: 1, vegetable: 1 }, //面粉+鸡蛋+蔬菜
+    tags: ["salty", "balanced", "light"],
     hint: "摊个鸡蛋皮，卷上青菜，营养满分。",
     unlockType: 'normal',
     img: "images/recipes/egg_wrap.png"
@@ -109,6 +126,7 @@ const recipes = [
     unlocked: false,
     price: 30, 
     recipe: { flour: 1, sugar: 1, bakingSoda: 1 }, //面粉+糖块+苏打粉
+    tags: ["sweet", "dainty", "snack"],
     hint: "糖和苏打粉的相遇，蒸出雪白蓬松的甜点。",
     unlockType: 'normal',
     img: "images/recipes/sugar.png"
@@ -119,6 +137,7 @@ const recipes = [
     unlocked: false,
     price: 48, 
     recipe: { flour: 1, ghee: 1, jam: 1 }, //面粉+酥油+果酱
+    tags: ["sweet", "luxury", "dainty"],
     hint: "酥脆的油饼中间，夹着珍贵的果酱。",
     unlockType: 'normal',
     img: "images/recipes/filled.png"
@@ -129,6 +148,7 @@ const recipes = [
     unlocked: false,
     price: 30, 
     recipe: { flour: 1, ghee: 1, yolk: 1 }, //面粉+酥油+蛋黄
+    tags: ["sweet", "salty", "rich"],
     hint: "酥油起酥，包入整颗咸蛋黄，富贵逼人。",
     unlockType: 'normal',
     img: "images/recipes/yolk.png"
@@ -139,6 +159,7 @@ const recipes = [
     unlocked: false,
     price: 40, 
     recipe: { flour: 1, egg: 1, cream: 1 }, //面粉+鸡蛋+奶油
+    tags: ["sweet", "milky", "rich", "luxury"],
     hint: "鸡蛋面糊烤空心，挤入满满的奶油。",
     unlockType: 'normal',
     img: "images/recipes/puff.png"
@@ -149,6 +170,7 @@ const recipes = [
     unlocked: false,
     price: 88, 
     recipe: { flour: 1, snowSugar: 1, yolk: 1 }, //面粉+雪花洋糖+蛋黄
+    tags: ["sweet", "luxury", "festival", "rich"],
     hint: "雪花洋糖配咸蛋黄，这才是中秋御赐的味道。",
     unlockType: 'normal',
     img: "images/recipes/moon.png"

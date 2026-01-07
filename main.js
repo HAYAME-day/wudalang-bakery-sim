@@ -4,7 +4,9 @@ const shichenArr = ["清晨", "上午", "中午", "午后", "夜晚"];
 let materials = { flour: 3, ghee: 3, vegetable: 0, meat: 0 };
 let favors = [ { name: "金莲", value: 0 }, { name: "西门庆", value: 0 }, { name: "武松", value: 0 } ];
 
-let selectedRecipeId = 'basic';//初始化选中菜谱
+//之前是初始化选中菜谱，现在改成可多选
+let selectedRecipeIds = ['basic'];
+let maxShopSlots = 2;//初始是最多上架2种菜谱，后期可升级为更多
 let marketVolatility = { farmer: 1.0, market: 1.0, innkeeper: 1.0 };//进货倍率变动初始化
 let newsEffect = {};
 
