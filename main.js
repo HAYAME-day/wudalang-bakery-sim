@@ -38,15 +38,75 @@ function update() {
   document.getElementById('shichen').textContent = shichenArr[timeIdx];
   renderFavors(); setThemeByTime(); renderMaterials();
   renderMaterialBag();
-
+  saveGame();//每次刷新都自动存储
 }
     // 好感侧栏（右侧）
-    function renderFavors() {
-      let html = favors.map(f=>`<div class="favor-item"><span class="favor-name">${f.name}</span><span class="favor-value">${f.value}</span></div>`).join("");
-      document.getElementById('favor-list').innerHTML = html;
-    }
-    // 背包侧栏（左侧）
+function renderFavors() {
+  let list = document.getElementById('favor-list');
+  if (!list) return;
 
+  let html = "";
+
+  //必须先检查window.characters是否存在，防止报错
+  if (window.characters) {
+      html = Object.values(window.characters)
+        .filter(c => c.unlocked)//过滤掉未解锁的角色（目前都是已解锁的角色但是感觉可以加入不同世界线版本的角色来丰富内容
+        .map(c => `
+    <div class="favor-item">
+        <span class="favor-emoji-wrapper" onclick="showSidebarBubble(this, '${c.id}')" title="点击对话">
+            ${c.emoji || ''}
+        </span>
+        <span class="favor-name">${c.name}</span>
+        
+        <span class="favor-value">❤ ${c.favorability || 0}</span>
+    </div>`)
+    .join(""); //把数组变成字符串
+  }
+
+  //如果啥都没有，显示提示（一般不会出现）
+  if (html === "") {
+      html = `<div style="padding:10px;color:#aaa;text-align:center;">暂无角色信息</div>`;
+  }
+
+  //拼接重置按钮
+  html += `
+     <div style="margin-top:20px;text-align:center;">
+        <button onclick="resetGame()" style="font-size:12px;color:#888;cursor:pointer;background:none;border:1px solid #ccc;padding:4px 8px;border-radius:4px;">
+            🗑️ 重置进度
+        </button>
+     </div>
+  `;
+
+  list.innerHTML = html;
+}
+//点击侧栏头像冒气泡台词功能
+window.showSidebarBubble = function(wrapperEl, charId) {
+    //去数据里找这个角色
+    let char = window.characters[charId];
+    //如果角色没有quotes，就什么都不做（一般不发生
+    if (!char || !char.quotes || char.quotes.length === 0) return;
+    //如果头上已经有气泡就先去除
+    let oldBubble = wrapperEl.querySelector('.sidebar-bubble');
+    if (oldBubble) oldBubble.remove();
+    //随机抽取一句台词
+    let text = char.quotes[Math.floor(Math.random() * char.quotes.length)];
+    //创建气泡元素
+    let bubble = document.createElement('div');
+    bubble.className = 'sidebar-bubble'; 
+    bubble.innerText = text;
+
+    wrapperEl.appendChild(bubble);
+
+    setTimeout(() => {
+        bubble.style.opacity = '0'; //先变透明
+        setTimeout(() => {
+            if(bubble.parentNode) bubble.remove(); //3秒消失
+        }, 500); 
+    }, 3000);
+}
+
+
+//背包侧栏（左侧）
 // 侧栏状态控制
     const sidebarLeft = document.getElementById('sidebar-left');
     const sidebarLeftBtn = document.getElementById('sidebar-left-btn');
@@ -247,15 +307,91 @@ if(sidebar && sidebarBtn) {
     if (e.target === sidebar) sidebar.classList.remove('active');
   }
 }
+//存档功能
+function saveGame() {
+  const saveData = {//所有重要变量打包
+    base:{money,reputation,day,timeIdx,maxShopSlots},
+    materials:materials,
+    selectedRecipeIds:selectedRecipeIds,
+    marketVolatility:marketVolatility,
+    //复杂状态
+    recipesUnlockStatus:recipes.map(r => ({id:r.id,unlocked:r.unlocked})),
+    charactersData:window.characters || {},
+    condimentsData:window.playerCondiments || {},
+    shopHistory:window.dailyShopHistory || {}
+  };
+  //浏览器缓存录入
+  localStorage.setItem('wudalang_save_v1', JSON.stringify(saveData));
+  console.log("Game Saved ✅");
+}
+//读档功能
+function loadGame() {
+    const saveString = localStorage.getItem('wudalang_save_v1');
+    if (!saveString) return false; //如果没有存档，返回失败
 
+    try {
+        const data = JSON.parse(saveString);
+        
+        //恢复基础数值
+        money = data.base.money;
+        reputation = data.base.reputation;
+        day = data.base.day;
+        timeIdx = data.base.timeIdx;
+        maxShopSlots = data.base.maxShopSlots || 2;
+        //恢复对象
+        materials = data.materials;
+        selectedRecipeIds = data.selectedRecipeIds || ['basic'];
+        marketVolatility = data.marketVolatility || { farmer: 1.0, market: 1.0, innkeeper: 1.0 };
+        //恢复菜谱解锁状态
+        if (data.recipesUnlockStatus) {
+            data.recipesUnlockStatus.forEach(status => {
+                let r = recipes.find(x => x.id === status.id);
+                if (r) r.unlocked = status.unlocked;
+            });
+        }
+        //恢复角色数据 (深度合并)
+        if (data.charactersData && window.characters) {
+            for (let charId in data.charactersData) {
+                if (window.characters[charId]) {
+                    Object.assign(window.characters[charId], data.charactersData[charId]);
+                }
+            }
+        }
+        //恢复调料
+        if (data.condimentsData && window.playerCondiments) {
+            Object.assign(window.playerCondiments, data.condimentsData);
+        }
+        //恢复进货历史
+        if (data.shopHistory) {
+            window.dailyShopHistory = data.shopHistory;
+        }
+        pushText(`📅 读取存档成功！回到第 ${day} 天。`);
+        return true; //读取成功
+    } catch (e) {
+        console.error("存档损坏", e);
+        return false;
+    }
+}
+//重开
+window.resetGame = function() {
+    if(confirm("确定要删除存档并重新开始吗？")) {
+        localStorage.removeItem('wudalang_save_v1');
+        location.reload(); // 刷新网页
+    }
+}
 // 启动
-let newsDom = document.getElementById('news');
-if(newsDom) newsDom.textContent = "【今日街头新闻】今天的街道很热闹，要开始卖炊饼了！";
-pushText('你整装待发，准备开启一天的生意。');
-update();
-// 确保 businessEvents.js 已加载后再调用
+if (!loadGame()) {
+    // 只有在新游戏时，才显示这段初始文本
+    let newsDom = document.getElementById('news');
+    if(newsDom) newsDom.textContent = "【今日街头新闻】今天的街道很热闹，要开始卖炊饼了！";
+    pushText('你整装待发，准备开启一天的生意。');
+}
+
 if (typeof showBusiness === 'function') {
     showBusiness();
 } else {
     console.warn("businessEvents.js 尚未加载，请确保在 index.html 中正确引用。");
 }
+setTimeout(() => {//解决characters.js没有加载的问题，必须强制刷新一下好感列表
+    renderFavors();
+}, 100);

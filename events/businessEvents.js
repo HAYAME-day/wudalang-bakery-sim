@@ -48,7 +48,7 @@ const purchaseChannels = [
       //普通货物60%概率出现：奶制品、调味品、水果等
       return rng < 0.6;
     }).map(m => {
-      let stockMin = 10, stockMax = 25;
+      let stockMin = 20, stockMax = 35;//实际玩了以后发现酥油是不太够的所以拉高库存
       //如果是稀有标签，刷出来的库存也更少一点
       if (m.tags.includes('imported') || m.tags.includes('fermented')) {
         stockMin = 3;

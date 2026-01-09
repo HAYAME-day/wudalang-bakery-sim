@@ -1,6 +1,7 @@
 //柜台经营游戏部分
-
+//初始化
 let currentCustomers = []; 
+let currentSpecialGuest = null;//新增雅座客人，包含潘金莲、西门庆、武松
 let maxQueueLength = 3;    
 let businessTimer = null;  
 let businessTimeLeft = 30; 
@@ -29,7 +30,7 @@ const customerDialogues = {
             { text: "巡逻累死了，来个肉多管饱的！", tags: ['meat', 'filling'] },
             { text: "要咸口的！再来点刺激的辣味！", tags: ['salty', 'spicy'] }
         ],
-        reactions: { perfect: "爽！这才是爷们吃的！💪", good: "行，饱了。", bad: "塞牙缝都不够！👊" }
+        reactions: { perfect: "爽！这才是俺爱吃的！💪", good: "行，饱了。", bad: "塞牙缝都不够！👊" }
     },
     '👱‍♀️': {
         requests: [
@@ -39,8 +40,8 @@ const customerDialogues = {
         reactions: { perfect: "味道真细腻~💖", good: "还可以。", bad: "太油腻了！😒" }
     }
 };
-const defaultDialogue = {
-    requests: [{ text: "老板，来个好吃的！", tags: ['basic'] }],
+const defaultDialogue = {//是默认类型的客人，一般来说不会出现
+    requests: [{ text: "老板，来个经典好吃的！", tags: ['basic'] }],
     reactions: { perfect: "美味！", good: "不错。", bad: "难吃。" }
 };
 
@@ -52,7 +53,7 @@ window.startCounterGame = function() {
     overlay.className = 'modal-overlay'; 
     overlay.style.background = '#3e2723'; 
     if (getComputedStyle(document.body).backgroundImage !== 'none') {
-         overlay.style.background = '#3e2723 url("images/bg_counter.png") center/cover no-repeat';
+         overlay.style.background = '#3e2723 url("images/bg_counter.png") center/cover no-repeat';//暂时还没添加柜台背景图
     }
     
     // ★ 移除了 "Serve" 按钮，增加了操作提示
@@ -67,7 +68,7 @@ window.startCounterGame = function() {
             <h1>☕ 摸鱼休息中...</h1>
             <button class="unlock-btn" onclick="togglePause()">继续摆摊</button>
         </div>
-
+        <div id="special-seat" class="special-seat"></div>
         <div class="customer-queue" id="customer-queue"></div>
 
         <div class="counter-desk">
@@ -84,8 +85,9 @@ window.startCounterGame = function() {
     `;
 
     document.body.appendChild(overlay);
-    
+    //状态初始化
     currentCustomers = [];
+    currentSpecialGuest = null;//雅座是空的
     shiftScore = 0;
     businessTimeLeft = 30; 
     currentDish = null; 
@@ -93,7 +95,9 @@ window.startCounterGame = function() {
     
     renderDeskFoods();
     renderDeskCondiments();
-    spawnCustomer(); 
+    //同时刷新普通客人和雅座客人
+    spawnCustomer();
+    spawnSpecialGuest(); //雅座客人局内固定只有一位
     
     if (businessTimer) clearInterval(businessTimer);
     businessTimer = setInterval(gameLoop, 1000);
@@ -112,7 +116,7 @@ function gameLoop() {
     let timerEl = document.getElementById('biz-timer');
     if(timerEl) timerEl.textContent = businessTimeLeft;
 
-    if (currentCustomers.length < maxQueueLength && Math.random() < 0.4) {
+    if (currentCustomers.length < maxQueueLength && Math.random() < 0.4) {//有40%的概率来客人，所以并不是每一秒都会来客人
         spawnCustomer();
     }
 
@@ -123,10 +127,10 @@ function gameLoop() {
 }
 
 function spawnCustomer() {
-    const emojis = ['👵', '🧒', '👮', '👱‍♀️'];
-    let emoji = emojis[Math.floor(Math.random() * emojis.length)];
-    let persona = customerDialogues[emoji] || defaultDialogue;
-    let reqTemplate = persona.requests[Math.floor(Math.random() * persona.requests.length)];
+    const emojis = ['👵', '🧒', '👮', '👱‍♀️'];//存储所有客人的脸
+    let emoji = emojis[Math.floor(Math.random() * emojis.length)];//随机小数0-1乘以列表长度然后向下取整拿出列表里的对应元素
+    let persona = customerDialogues[emoji] || defaultDialogue;//获取台词
+    let reqTemplate = persona.requests[Math.floor(Math.random() * persona.requests.length)];//依然是随机取同客人的多种台词中的一种
     
     let customer = {
         id: Date.now() + Math.random(),
@@ -135,14 +139,14 @@ function spawnCustomer() {
         demands: reqTemplate.tags,
         persona: persona,
         state: 'waiting', 
-        patience: 15 
+        patience: 15 //暂时没用上但是后续可以添加客人等太久生气离开的情况
     };
     
-    currentCustomers.push(customer);
-    renderQueue();
+    currentCustomers.push(customer);//加入队列
+    renderQueue();//更新排队名单
 }
 
-// ★ 核心修改：渲染客人时，添加点击事件
+//排队客人渲染函数
 function renderQueue() {
     let container = document.getElementById('customer-queue');
     if(!container) return;
@@ -151,16 +155,14 @@ function renderQueue() {
     currentCustomers.forEach((c) => {
         let div = document.createElement('div');
         div.className = 'customer-card';
-        // 鼠标放上去变手指，提示可点击
-        div.style.cursor = "pointer";
+        div.style.cursor = "pointer";//鼠标在上面变成手指，表示可以点击
         
-        // 点击客人 -> 尝试上菜
-        div.onclick = () => tryServeCustomer(c);
+        div.onclick = () => tryServeCustomer(c);//点击上菜
         
-        if(c.state === 'leaving') div.classList.add('leaving-customer');
+        if(c.state === 'leaving') div.classList.add('leaving-customer');//转变为离开状态有淡出的CSS效果
 
-        let bubbleContent = c.feedbackText ? c.feedbackText : c.dialogueText;
-        let bubbleClass = c.feedbackType ? `customer-bubble bubble-${c.feedbackType}` : 'customer-bubble';
+        let bubbleContent = c.feedbackText ? c.feedbackText : c.dialogueText;//台词判断，已经得到上菜的客人给出feedback，没有上菜的客人依然是要求dialogue
+        let bubbleClass = c.feedbackType ? `customer-bubble bubble-${c.feedbackType}` : 'customer-bubble';//根据feedback的评价变更颜色
 
         div.innerHTML = `
             <div class="customer-emoji">${c.emoji}</div>
@@ -173,7 +175,7 @@ function renderQueue() {
 //给指定客人上菜，如果评价是完美可以得到声望+1
 function tryServeCustomer(customer) {
     if(isPaused) return;
-    if(customer.state !== 'waiting') return; // 不能给正在吃或正在走的人上菜
+    if(customer.state !== 'waiting') return; //不能给正在吃或正在走的人上菜
 
     if(!currentDish) {
         pushText("盘子里是空的！先把饼拖进去！");
@@ -184,24 +186,24 @@ function tryServeCustomer(customer) {
         return;
     }
 
-    // 1. 检查原材料是否足够 (再次检查，防止拖动后材料被其他操作消耗)
-    // 注意：这里我们只在【上菜成功】的瞬间扣材料
+    //先检查原材料是否足够 (再次检查，防止拖动后材料被其他操作消耗)
+    //只在上菜成功的瞬间扣材料
     let recipe = recipes.find(r => r.id === currentDish.recipeId);
     if(!checkIngredients(recipe)) {
         pushText(`糟糕！做 ${recipe.name} 的材料不够了！`);
-        // 强制清空盘子，因为这盘菜其实做不出来
+        //强制清空盘子，因为这盘菜其实做不出来
         currentDish = null;
         renderPlate();
-        renderDeskFoods(); // 刷新左侧锁定状态
+        renderDeskFoods(); //刷新左侧锁定状态
         return;
     }
 
-    // 2. 扣除原材料 (关键！)
+    //上菜成功的瞬间扣除原材料
     consumeIngredients(recipe);
-    // 顺便刷新左侧，如果材料用完了，对应的饼要变灰
+    //刷新左侧，如果材料用完了，对应的饼要变灰
     renderDeskFoods();
 
-    // 3. 结算评价
+    //结算评价：计算feedback的评级
     let finalTags = [...recipe.tags, ...currentDish.extraTags];
     let matchCount = 0;
     customer.demands.forEach(req => { if(finalTags.includes(req)) matchCount++; });
@@ -219,7 +221,7 @@ function tryServeCustomer(customer) {
         finalIncome = basePrice;
         feedbackType = 'good';
     } else {
-        finalIncome = Math.floor(basePrice * 0.5); 
+        finalIncome = Math.floor(basePrice * 0.5); //如果不满足要求就只有一半进账
         feedbackType = 'bad';
     }
     
@@ -306,7 +308,15 @@ function renderDeskCondiments() {
         let usesLeft = playerCondiments[c.id] || 0;
         let div = document.createElement('div');
         div.className = 'condiment-item';
-        if(usesLeft <= 0) div.classList.add('empty');
+        if(usesLeft <= 0) {
+            div.classList.add('empty');
+            //增加提示让玩家消耗原料补充调料
+            let matName = c.refill ? c.refill.materialKey : '原料';
+            div.title = `点击消耗 ${matName} 补充`;
+    
+            let stock = materials[c.refill.materialKey] || 0;
+            if (stock >= c.refill.amount) div.style.border = "2px dashed #2ecc71"; //绿色虚线框提示可补充
+        };
         div.onclick = () => selectActiveCondiment(c);
         div.innerHTML = `<img src="${c.img}"><div class="uses">${usesLeft}</div>`;
         container.appendChild(div);
@@ -345,14 +355,54 @@ function renderPlate() {
     let badges = currentDish.extraTags.map(tag => `<span class="badge badge-${tag}"></span>`).join('');
     plate.innerHTML = `<img src="${r.img}" class="plated-food">${badges}`;
 }
-
+//加调料函数，对于空罐子可以消耗材料补充调料
 function selectActiveCondiment(c) {
     if(isPaused) return; 
-    if(playerCondiments[c.id] <= 0) { pushText("空了！"); return; }
+    if(playerCondiments[c.id] <= 0) { //点击空罐子消耗材料补充
+        if (!c.cost) {//获取配方
+            pushText(`${c.name} 已用尽！`);
+            return;
+        }
+        //检查原料是否足够
+        let missing = [];//记录缺少什么原料
+        for(let materialName in c.cost) {
+            let required = c.cost[materialName];
+            let owned = materials[materialName] || 0;//兜底防止materials[key]为undefined时的报错
+            if (owned < required) {
+                let nameCN = window.getMaterialName ? window.getMaterialName(materialName):materialName;
+                missing.push(nameCN);
+            }
+        }
+        //缺少原料
+        if(missing.length > 0) {
+            pushText(`无法补充，缺少 ${missing.join('，')}`);
+            return;
+        }
+        //原料足够
+        for (let materialName in c.cost) {
+            let needCount = c.cost[materialName];
+            materials[materialName] -= needCount;
+        }
+        //补满调料罐次数到最大
+        playerCondiments[c.id] = c.maxUses || 5;
+        pushText(`消耗原料，${c.name} 已补满！`);
+        renderDeskCondiments(); //刷新界面，让灰色变彩色
+        return; 
+    }
+
+    //正常的加料逻辑
     if(!currentDish) { pushText("先放饼！"); return; }
+    //扣除一次使用次数
     playerCondiments[c.id]--; 
-    c.tags.forEach(t => { if(!currentDish.extraTags.includes(t)) currentDish.extraTags.push(t); });
-    renderDeskCondiments(); renderPlate(); 
+    //给饼增加对应调料tag
+    c.tags.forEach(t => { 
+        if(!currentDish.extraTags.includes(t)) {
+            currentDish.extraTags.push(t); 
+        }
+    });
+
+    renderDeskCondiments(); 
+    renderPlate(); 
 }
 
 // 结算弹窗 (保持不变)
@@ -373,4 +423,230 @@ window.closeCounterGame = function() {
     if (businessTimer) clearInterval(businessTimer);
     update(); 
     if(typeof nextTime === 'function') nextTime(); 
+}
+
+//特殊人物（雅座客人）剧情
+function spawnSpecialGuest() {
+    if (!window.characters) return;
+    //筛选已解锁的角色（初始三人物都是已经解锁了的
+    let unlockedChars = Object.values(window.characters).filter(c => c.unlocked);
+    if (unlockedChars.length === 0) return;//一般不存在此情况，以防万一
+    //随机抽选
+    let charData = unlockedChars[Math.floor(Math.random() * unlockedChars.length)];
+    //随机分配雅座客人需求
+    let demandTemplate = charData.demandPool ? charData.demandPool[Math.floor(Math.random() * charData.demandPool.length)] : { tags: ['basic'], text: "……"};//存在需求池的情况就能正常抽选需求，不存在就默认basic（和普通客人默认basic一样）
+    currentSpecialGuest = {
+        charId: charData.id,
+        ...charData,
+        currentDemand: demandTemplate,//本次需求存储
+        state: 'waiting'
+    };
+    renderSpecialSeat();
+}
+function renderSpecialSeat() {
+    let container = document.getElementById('special-seat');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!currentSpecialGuest) return;
+
+    let div = document.createElement('div');
+    div.className = 'special-guest-card';
+
+    //拖拽上菜给VIP
+    div.ondragover = allowDrop;
+    div.ondrop = (ev) => {
+        ev.preventDefault();
+        let foodId = ev.dataTransfer.getData("foodId");
+        if (foodId) {
+            let tempDish = {recipeId: foodId, extraTags: []};
+            tryServeSpecialGuest(tempDish);
+        }
+    };
+    //点击上菜给VIP
+    div.onclick = () => {
+        if(isPaused) return;
+        if(currentDish) {
+            tryServeSpecialGuest(currentDish); 
+        } else {
+            //没菜时点击，显示具体需求文本
+            pushText(`【${currentSpecialGuest.name}】: ${currentSpecialGuest.currentDemand.text}`);
+            //气泡抖动反馈
+            let bubble = div.querySelector('.special-demand-box');
+            if(bubble) {
+                bubble.style.transform = "scale(1.1)";
+                setTimeout(()=>bubble.style.transform="scale(1)", 200);
+            }
+        }
+    };
+    //3个需求tag图标
+    let tagsHtml = currentSpecialGuest.currentDemand.tags.map(t => 
+        // 这里假设你有 getTagIcon 函数，如果没有请在 helper 区域补上，或者暂时用 text
+        `<span class="mini-tag">${window.getTagIcon ? window.getTagIcon(t) : t}</span>`
+    ).join('');
+    div.innerHTML = `
+        <div class="special-emoji">${currentSpecialGuest.emoji}</div>
+        <div class="special-name">${currentSpecialGuest.name}</div>
+        <div class="special-demand-box">${tagsHtml}</div>
+    `;
+    container.appendChild(div);
+}
+//给特殊人物上菜的结算
+function tryServeSpecialGuest(dish) {
+    if (isPaused) return;
+    //检查材料
+    let recipe = recipes.find(r => r.id ===dish.recipeId);
+    if (!checkIngredients(recipe)) {
+        pushText(`材料不足，做不了 ${recipe.name}！`);
+        return;
+    }
+    //扣除材料后刷新左侧
+    consumeIngredients(recipe);
+    renderDeskFoods();
+    //计算3个tags的匹配度
+    let finalTags = [...recipe.tags, ...dish.extraTags];
+    let demands = currentSpecialGuest.currentDemand.tags;
+    let matchCount = 0;
+
+    demands.forEach(req => {
+        if(finalTags.includes(req)) matchCount++;
+    });
+    //给予不同满足tags个数的奖励
+    let basePrice = recipe.price;
+    let multiplier = 1.0;
+    let repGain = 0;
+
+    if (matchCount === 1) {
+        multiplier = 1.2;
+    } else if (matchCount === 2) {
+        multiplier = 1.4;
+        repGain = 1;
+    } else if (matchCount === 3) {
+        multiplier = 2.0;
+        repGain = 2;
+    }
+
+    let income = Math.floor(basePrice * multiplier);
+    
+    //本局收入和声望更新
+    money += income;
+    shiftScore += income;
+    reputation += repGain;
+    
+    document.getElementById('biz-score').textContent = shiftScore;
+    
+    let msg = `VIP赏银 ${income}文`;
+    if(repGain > 0) msg += ` (声望+${repGain})`;
+    pushText(msg);
+
+    //结束上菜后盘子清空
+    currentDish = null;
+    renderPlate();
+
+    //★进入剧情模式！获取评价文本
+    //这里的foodReactions定义位于characters.js
+    let feedbackText = currentSpecialGuest.foodReactions[matchCount] || "（吃完了）";//一般不会显示但是以防万一还是写个默认值
+    
+    //稍微延迟，让玩家看清金币增加，然后暂停，接下来进入剧情模式
+    setTimeout(() => {
+        enterStoryMode(currentSpecialGuest, feedbackText);
+    }, 300);
+}
+// 4. 进入剧情模式 (整合评价+随机剧情)
+function enterStoryMode(guest, foodFeedback) {
+    isPaused = true;
+    
+    // 检查是否有剧情数据
+    if (!window.storyEvents || !window.storyEvents[guest.charId]) {
+        // 没剧情，只显示评价，然后给一个退出按钮
+        renderStoryModal(guest, { 
+            text: foodFeedback + "<br><br>（该角色暂无更多剧情事件）", 
+            options: [{text: "继续营业", effect: {}}] 
+        });
+        return;
+    }
+
+    let pool = window.storyEvents[guest.charId][guest.stage];
+    if (!pool || !pool.random) return;
+
+    let randomEvent = pool.random[Math.floor(Math.random() * pool.random.length)];
+    
+    // ★ 拼接文本：先评价菜，再聊剧情
+    let fullText = `<span style="color:#d35400; font-weight:bold;">[评价]</span> ${foodFeedback}<br><hr style="border:0; border-top:1px dashed #ccc; margin:10px 0;">${randomEvent.text}`;
+
+    let combinedEvent = {
+        text: fullText,
+        options: randomEvent.options
+    };
+    
+    renderStoryModal(guest, combinedEvent);
+}
+
+// 5. 渲染 AVG 风格对话框
+function renderStoryModal(guest, event) {
+    let overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '4000'; // 必须比暂停层高
+    overlay.id = 'story-overlay';
+    
+    let buttonsHtml = event.options.map((opt, idx) => `
+        <button class="story-btn" onclick="resolveStoryOption('${guest.charId}', ${idx})">
+            ${opt.text}
+        </button>
+    `).join('');
+
+    overlay.innerHTML = `
+        <div class="story-box">
+            <div class="story-header">
+                <span style="font-size:2em; margin-right:10px;">${guest.emoji}</span>
+                <div>
+                    <div style="font-weight:bold; font-size:1.2em;">${guest.name}</div>
+                    <div style="font-size:0.8em; color:#666;">当前好感: ${guest.favorability}</div>
+                </div>
+            </div>
+            <div class="story-content">
+                ${event.text}
+            </div>
+            <div class="story-actions">
+                ${buttonsHtml}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    window.currentStoryOptions = event.options; // 存选项供回调
+}
+
+// 6. 处理剧情选择
+window.resolveStoryOption = function(charId, idx) {
+    let option = window.currentStoryOptions[idx];
+    let effect = option.effect || {};
+    
+    // 结算效果
+    if (effect.fav) window.addFavorability(charId, effect.fav);
+    if (effect.money) {
+        money += effect.money;
+        pushText(effect.money > 0 ? `获得 ${effect.money} 文` : `失去 ${Math.abs(effect.money)} 文`);
+    }
+    if (effect.rep) {
+        reputation += effect.rep;
+        pushText(`声望 ${effect.rep > 0 ? '+' : ''}${effect.rep}`);
+    }
+
+    // 关闭剧情弹窗
+    let storyOverlay = document.getElementById('story-overlay');
+    if(storyOverlay) storyOverlay.remove();
+
+    // ★ 关键：剧情结束后，不直接开始，而是回到暂停菜单
+    showPauseMenuAfterStory();
+}
+
+function showPauseMenuAfterStory() {
+    isPaused = true; // 确保还在暂停
+    let screen = document.getElementById('pause-screen');
+    if (screen) {
+        screen.style.display = 'flex';
+        // 改一下文字，更有代入感
+        document.getElementById('pause-title').textContent = "剧情回顾完毕";
+        document.getElementById('pause-msg').textContent = "准备好继续营业了吗？";
+    }
 }

@@ -433,8 +433,69 @@ h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
     cursor: pointer;
     margin-top: 20px;
 }
+/* --- 侧边栏互动气泡 --- */
 
-/* --- 侧边栏：图形化菜谱书 (追加在style.css末尾) --- */
+/* Emoji 的容器：设为相对定位，作为气泡的坐标原点 */
+.favor-emoji-wrapper {
+    position: relative;
+    cursor: pointer;
+    font-size: 1.2em;
+    margin-right: 5px;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+/* 鼠标放上去稍微变大一点，提示可点击 */
+.favor-emoji-wrapper:hover {
+    transform: scale(1.2);
+}
+
+/* 气泡本体 */
+.sidebar-bubble {
+    position: absolute;
+    right: 120%; /* 放在头像的左边 */
+    top: 50%;
+    transform: translateY(-50%); /* 垂直居中 */
+    
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap; /* 不换行 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+    
+    /* 动画效果 */
+    opacity: 1;
+    transition: opacity 0.5s;
+    pointer-events: none; /* 让鼠标能穿透气泡，不影响点击 */
+}
+
+/* 气泡的小尾巴 (指向右边的头像) */
+.sidebar-bubble::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -6px; /* 贴在右边框外 */
+    margin-top: -6px;
+    border-width: 6px 0 6px 6px; /* 画一个向右的三角形 */
+    border-style: solid;
+    border-color: transparent transparent transparent #fff; /* 颜色同背景 */
+}
+/* 尾巴的描边 (为了视觉统一) */
+.sidebar-bubble::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -7px;
+    margin-top: -6px;
+    border-width: 6px 0 6px 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent #ccc; /* 颜色同边框 */
+}
+/* --- 侧边栏：图形化菜谱书 --- */
 .recipe-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 一行3个，嫌挤可以改成2 */
@@ -798,4 +859,72 @@ h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
 }
 .pause-btn:hover {
     background: rgba(255,255,255,0.2);
+}
+/*雅座位置*/
+.special-seat {
+    position: absolute; /* ★ 关键：让它脱离文档流，自由飞翔 */
+    top: 90px;          /* 距离顶部 90像素 (刚好在倒计时下面) */
+    right: 20px;        /* 距离右边 20像素 */
+    width: 100px;
+    height: 140px;
+    
+    /* 给它一个淡淡的背景，让你能看清它的位置 */
+    background: rgba(255, 215, 0, 0.1); 
+    border: 2px dashed rgba(255, 215, 0, 0.5); /* 金色虚线边框 */
+    border-radius: 10px;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100; /* 保证它浮在最上面 */
+}
+
+/*特殊客人的卡片*/
+.special-guest-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column; /* 上下排列：头在上面，名字在下面 */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: float 3s ease-in-out infinite; /* 微微浮动特效 */
+}
+.special-emoji {
+    font-size: 60px; /* ★ 这里控制头像大小 */
+    filter: drop-shadow(0 0 5px gold); /* 发光特效 */
+    margin-bottom: 5px;
+}
+.special-name {
+    background: #d35400;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.special-demand-box {
+    position: absolute;
+    top: -30px; /* 飘在头顶 */
+    background: #fff;
+    border: 2px solid #d35400;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.special-demand-box::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: #d35400 transparent transparent transparent;
+}
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
 }
