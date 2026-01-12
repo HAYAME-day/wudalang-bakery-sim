@@ -33,7 +33,9 @@ window.renderRecipeBook = function() {
         e.stopPropagation();//很关键，要阻止冒泡才能避免玩家切换一次菜谱选中就收一次侧边栏
         toggleRecipeSelection(r.id);
         //同时也要弹出气泡告知玩家tags
-        let tagsText = (r.tags && r.tags.length > 0) ? r.tags.join('，') : '暂无';
+        let tagsText = (r.tags && r.tags.length > 0) 
+          ? r.tags.map(t => getTagName(t)).join('，')//map遍历每个标签变成中文名称 
+          : '暂无';
         showHintBubble(e, `🏷️ <b>属性</b>: ${tagsText}`);
       };
 

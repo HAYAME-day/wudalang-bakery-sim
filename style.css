@@ -629,6 +629,18 @@ h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
         opacity: 1; 
     }
 }
+/* tags的样式 */
+.tag-label {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #fdf6e3; /* 淡淡的米黄色 */
+    color: #cb4b16;    /* 砖红色，很有古风感 */
+    border: 1px solid #eee8d5;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-right: 4px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+}
 
 /*调味，包括调料区本身和调味状态角标*/
 /* --- 调料区样式 --- */

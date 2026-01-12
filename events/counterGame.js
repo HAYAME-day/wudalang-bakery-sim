@@ -2,6 +2,7 @@
 //初始化
 let currentCustomers = []; 
 let currentSpecialGuest = null;//新增雅座客人，包含潘金莲、西门庆、武松
+let shiftVipRecords = [];//本局服务记录本
 let maxQueueLength = 3;    
 let businessTimer = null;  
 let businessTimeLeft = 30; 
@@ -88,6 +89,7 @@ window.startCounterGame = function() {
     //状态初始化
     currentCustomers = [];
     currentSpecialGuest = null;//雅座是空的
+    shiftVipRecords = [];//每次开店先把记录清空
     shiftScore = 0;
     businessTimeLeft = 30; 
     currentDish = null; 
@@ -408,6 +410,32 @@ function selectActiveCondiment(c) {
 // 结算弹窗 (保持不变)
 function endBusinessShiftUI() {
     let overlay = document.getElementById('counter-overlay');
+    //复盘界面
+    let vipLogHtml = '';
+    if(shiftVipRecords.length > 0) {
+        let logs = shiftVipRecords.map(record => {
+            let tagsText = record.matched.length > 0
+            ? `<span style="color:#2ecc71">满足: ${record.matched.join('、')}</span>`
+            : `<span style="color:#e74c3c">口味不合</span>`;
+
+            //声望变动显示
+            let repText = record.rep > 0 ? ` <span style="color:#f1c40f">(声望+${record.rep})</span>` : '';
+
+            return `
+                <div style="margin: 8px 0; font-size: 0.9em; border-bottom:1px dashed rgba(255,255,255,0.2); padding-bottom:4px;">
+                    ${record.emoji} <b>${record.name}</b>: ${tagsText}
+                    <div style="margin-top:2px; opacity:0.8;">赏银: ${record.income}文${repText}</div>
+                </div>
+            `;
+        }).join('');
+
+        vipLogHtml = `
+            <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px; margin:15px 0; text-align:left;">
+                <div style="font-size:0.8em; color:#aaa; margin-bottom:5px;">📋 雅座接待记录</div>
+                ${vipLogHtml}
+            </div>
+        `;
+    }
     overlay.innerHTML = `
         <div class="shop-body" style="text-align:center;color:#fff;border:2px solid #ffcc00;background:rgba(0,0,0,0.8);">
             <h2>🌙 打烊收工</h2>
@@ -479,10 +507,11 @@ function renderSpecialSeat() {
         }
     };
     //3个需求tag图标
-    let tagsHtml = currentSpecialGuest.currentDemand.tags.map(t => 
-        // 这里假设你有 getTagIcon 函数，如果没有请在 helper 区域补上，或者暂时用 text
-        `<span class="mini-tag">${window.getTagIcon ? window.getTagIcon(t) : t}</span>`
-    ).join('');
+    let tagsHtml = currentSpecialGuest.currentDemand.tags.map(t => {
+        let content = window.getTagIcon ? window.getTagIcon(t) : getTagName(t);
+    return `<span class="mini-tag">${content}</span>`;
+    }).join('');//注意需要后续补上TagIcon图标
+
     div.innerHTML = `
         <div class="special-emoji">${currentSpecialGuest.emoji}</div>
         <div class="special-name">${currentSpecialGuest.name}</div>
@@ -505,7 +534,11 @@ function tryServeSpecialGuest(dish) {
     //计算3个tags的匹配度
     let finalTags = [...recipe.tags, ...dish.extraTags];
     let demands = currentSpecialGuest.currentDemand.tags;
-    let matchCount = 0;
+
+    //找出具体匹配的标签以在结算时为玩家复盘
+    let matchedTagsRaw = demands.filter(req => finalTags.includes(req));
+    let matchedTagsCN = matchedTagsRaw.map(t => window.getTagName(t));//展示给玩家的是中文tag名称
+    let matchCount = matchedTagsRaw.length;
 
     demands.forEach(req => {
         if(finalTags.includes(req)) matchCount++;
@@ -550,6 +583,16 @@ function tryServeSpecialGuest(dish) {
     setTimeout(() => {
         enterStoryMode(currentSpecialGuest, feedbackText);
     }, 300);
+
+    //显示文本的复盘展示
+    shiftVipRecords.push({
+        name: currentSpecialGuest.name,
+        emoji: currentSpecialGuest.emoji,
+        matched: matchedTagsCN,
+        income: income,
+        rep: repGain,
+        isPerfect: (matchCount === 3)
+    })
 }
 // 4. 进入剧情模式 (整合评价+随机剧情)
 function enterStoryMode(guest, foodFeedback) {

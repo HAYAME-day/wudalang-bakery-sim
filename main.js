@@ -16,6 +16,7 @@ let textHistory = [];
 
 // 公共函数（页面更新、文本/日志、可拉式侧栏等）
 function pushText(txt) { textHistory.push(txt); if (textHistory.length > maxTextHistory) textHistory.shift(); renderTextHistory(); }
+
 function renderTextHistory() {
   const ta = document.getElementById('text-area');
   ta.innerHTML = "";
