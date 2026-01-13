@@ -16,7 +16,12 @@ const tagNames = {
   'imported': '舶来品',
   'fermented': '发酵品',
   'hot': '烫口',
-  'cold': '冰爽'
+  'cold': '冰爽',
+  'aromatic': '葱香',   
+  'rich': '浓郁',
+  'milky': '奶香',
+  'light': '清淡', 
+  'snack': '零嘴'
 };
 function getTagName(tagId) {
   return tagNames[tagId] || tagId;//找不到对应中文的时候用原ID显示

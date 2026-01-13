@@ -313,11 +313,18 @@ function renderDeskCondiments() {
         if(usesLeft <= 0) {
             div.classList.add('empty');
             //增加提示让玩家消耗原料补充调料
-            let matName = c.refill ? c.refill.materialKey : '原料';
-            div.title = `点击消耗 ${matName} 补充`;
+            let costKey = c.cost ? Object.keys(c.cost)[0]:null;//获取重新装填需要的原材料名
+            let costAmount = costKey ? c.cost[costKey]:0;//获取重新装填需要的原材料数量
+            //提示
+            let matNameCN = (costKey && window.getMaterialName)
+                ? window.getMaterialName(costKey)
+                : (costKey || '原料');//告诉玩家需要什么
+            div.title = `点击消耗 ${matNameCN} 补充`;
     
-            let stock = materials[c.refill.materialKey] || 0;
-            if (stock >= c.refill.amount) div.style.border = "2px dashed #2ecc71"; //绿色虚线框提示可补充
+            let stock = materials[costKey] || 0;
+            if (costKey && stock >= costAmount) {
+                div.style.border = "2px dashed #2ecc71"
+            }; //绿色虚线框提示可补充
         };
         div.onclick = () => selectActiveCondiment(c);
         div.innerHTML = `<img src="${c.img}"><div class="uses">${usesLeft}</div>`;

@@ -73,8 +73,8 @@ const condiments = [
 
 // 玩家当前的调料库存状态 (存储在存档里)
 // 结构: { 'salt_jar': 3, 'sugar_jar': 0 } (数字代表剩余次数)
-let playerCondiments = {
-    'salt_jar': 5,
-    'sugar_jar': 5,
-    'chili_jar': 5
+window.playerCondiments = {
+  'salt_jar': 5,
+  'sugar_jar': 5,
+  'chili_jar': 5
 };

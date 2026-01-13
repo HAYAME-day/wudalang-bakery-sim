@@ -165,12 +165,12 @@ function nextTime() {
   timeIdx++;
   if(timeIdx >= shichenArr.length){
     //如果过完了一天的最后一个时辰，延迟一小会儿进入下一天
-    setTimeout(endDay, 350);
+    setTimeout(endDay, 350);//这一分支不能update()因为timeIdx越界了会导致空白
   } else {
     //否则继续刷新经营界面
     showBusiness();
+    update();//更新界面并自动存档
   }
-  update();
   //可以加入随着时间推进触发的特殊事件
 }
 
@@ -196,7 +196,7 @@ function endDay() {
       if (marketVolatility.innkeeper > 1.3) trendText = "（听说酒楼的进货价涨疯了！）";
       else if (marketVolatility.innkeeper < 0.8) trendText = "（酒楼老板似乎在亏本甩卖...）";
       else if (marketVolatility.farmer < 0.9 && marketVolatility.market > 1.1) trendText = "（农户那边还是老价钱，集市却涨了。）";
-
+      update();//天数的更新
       pushText(`第${day}天到了。${trendText}`);
 
 }
@@ -367,6 +367,7 @@ function loadGame() {
             window.dailyShopHistory = data.shopHistory;
         }
         pushText(`📅 读取存档成功！回到第 ${day} 天。`);
+        updateUI();//全部恢复以后需要一个update才能让页面及时刷新显示正常
         return true; //读取成功
     } catch (e) {
         console.error("存档损坏", e);
@@ -396,3 +397,25 @@ if (typeof showBusiness === 'function') {
 setTimeout(() => {//解决characters.js没有加载的问题，必须强制刷新一下好感列表
     renderFavors();
 }, 100);
+function updateUI() {
+  // 1. 刷新金钱 (只认 money)
+    let moneyEl = document.getElementById('money');
+    if (moneyEl) moneyEl.textContent = money;
+
+    // 2. 刷新声望 (只认 reputation)
+    let repEl = document.getElementById('reputation');
+    if (repEl) repEl.textContent = reputation;
+
+    // 3. 刷新时间 (和 update() 里的逻辑保持一致)
+    let shichenEl = document.getElementById('shichen');
+    if (shichenEl) shichenEl.textContent = shichenArr[timeIdx];
+
+    // 4. 刷新背景色 (防止读档后背景色不对)
+    setThemeByTime();
+
+    // 5. 刷新侧栏数据
+    renderMaterials();
+    renderFavors();
+
+    console.log(`UI已刷新: 💰${money} | 📢${reputation} | ⏰${shichenArr[timeIdx]}`);
+}
