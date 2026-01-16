@@ -59,6 +59,14 @@ const materialsList = [
     img: "images/materials/sugar.png", 
     desc: "调味品，普通的糖。"
   },
+  { 
+    id: "salt", 
+    name: "盐块", 
+    basePrice: 5, 
+    tags: ["crop", "condiment"], 
+    img: "images/materials/salt.png", 
+    desc: "大颗的盐块，需要自己研磨后才能用。"
+  },
 
   // --- 畜产品 (Animal Products) ---
   { 

@@ -9,6 +9,10 @@ let businessTimeLeft = 30;
 let shiftScore = 0;        
 let isPaused = false;
 let currentDish = null; // 当前盘子里的东西
+//经营技能变量
+let hasUsedSkill = false;//是否已经使用过
+let jinlianBuffActive = false;//金莲BUFF激活：下一个服务的客人不管满不满足tag都有双倍金钱和双倍声望
+let shiftMaxRecord = {money:0,rep:0};//武松技能：记录本局最高的单笔收入，再次给一遍该客人给出的金钱和声望
 
 // --- 话术数据库 (保持不变) ---
 const customerDialogues = {
@@ -66,7 +70,8 @@ window.startCounterGame = function() {
         </div>
 
         <div id="pause-screen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:3000; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
-            <h1>☕ 摸鱼休息中...</h1>
+            <h1 id="pause-title" style="margin-bottom:20px;">☕ 摸鱼休息中...</h1>
+            <p id="pause-msg" style="margin-bottom:30px; color:#ccc;">休息一下，马上回来...</p>
             <button class="unlock-btn" onclick="togglePause()">继续摆摊</button>
         </div>
         <div id="special-seat" class="special-seat"></div>
@@ -588,7 +593,7 @@ function tryServeSpecialGuest(dish) {
     
     //稍微延迟，让玩家看清金币增加，然后暂停，接下来进入剧情模式
     setTimeout(() => {
-        enterStoryMode(currentSpecialGuest, feedbackText);
+        enterStoryMode(currentSpecialGuest, feedbackText, matchCount);//还要传输一下tag的匹配个数，这样才能根据玩家serve的表现来判定要不要进入约会事件
     }, 300);
 
     //显示文本的复盘展示
@@ -602,9 +607,14 @@ function tryServeSpecialGuest(dish) {
     })
 }
 // 4. 进入剧情模式 (整合评价+随机剧情)
-function enterStoryMode(guest, foodFeedback) {
+function enterStoryMode(guest, foodFeedback, matchCount) {
     isPaused = true;
-    
+    //约会事件的触发，如果满足2个及以上的tag就进入约会
+    if(matchCount >= 2 && window.startDatingEvent) {
+        pushText(`✨ 菜品深得 ${guest.name} 欢心，触发亲密互动！`);
+        window.startDatingEvent(guest);
+        return;
+    }
     // 检查是否有剧情数据
     if (!window.storyEvents || !window.storyEvents[guest.charId]) {
         // 没剧情，只显示评价，然后给一个退出按钮
@@ -616,7 +626,14 @@ function enterStoryMode(guest, foodFeedback) {
     }
 
     let pool = window.storyEvents[guest.charId][guest.stage];
-    if (!pool || !pool.random) return;
+    if (!pool || !pool.random) {
+         //防御性代码：如果有剧情池但为空
+         renderStoryModal(guest, { 
+            text: foodFeedback, 
+            options: [{text: "继续营业", effect: {}}] 
+        });
+        return;
+    }
 
     let randomEvent = pool.random[Math.floor(Math.random() * pool.random.length)];
     

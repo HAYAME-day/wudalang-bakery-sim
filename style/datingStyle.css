@@ -1,0 +1,69 @@
+/* 用于管理各种小游戏的样式 */
+/* 约会系统的全屏遮罩，层级要比柜台游戏(3000)高 */
+.dating-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: "Microsoft YaHei", sans-serif;
+}
+
+/* 游戏区域容器 */
+.minigame-container {
+    width: 320px;
+    height: 400px;
+    background: #fff9f2;
+    border: 4px solid #ffcc00;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden; /* 防止东西飞出去 */
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+}
+
+/* 角色立绘区域（在小游戏里显示角色表情） */
+.dating-char-portrait {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 150px;
+    pointer-events: none; /* 让点击能穿透图片点到后面的游戏元素 */
+    transition: all 0.3s;
+}
+
+/* --- 示例：土耳其冰激凌小游戏样式 --- */
+.ice-cream-target {
+    width: 60px;
+    height: 60px;
+    font-size: 40px;
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    transition: top 0.1s, left 0.1s; /* 移动时的平滑效果 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dating-timer-bar {
+    width: 80%;
+    height: 10px;
+    background: #ddd;
+    margin-top: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.dating-timer-fill {
+    height: 100%;
+    background: #ff6b6b;
+    width: 100%;
+    transition: width 1s linear;
+}

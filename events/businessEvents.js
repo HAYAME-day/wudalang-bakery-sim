@@ -14,12 +14,12 @@ const purchaseChannels = [
     id: 'farmer', 
     label: '相熟农户',
     baseMultiplier: 0.6,
-    desc: '老实人，只卖地里长出来的东西。',
+    desc: '老实人，只卖地里长出来的和自家做的。',
     // 逻辑：筛选所有标签包含 "crop" 的物品
     getInventoryData: function() {
       //库存随机设置数量在限定范围内
       return materialsList
-        .filter(m => m.tags.includes('crop'))
+        .filter(m => m.tags.includes('crop') || m.id ==='ghee')//酥油加进来
         .map(m => ({ id: m.id, stockRange: [20,35]}));
     }
   },
@@ -48,7 +48,7 @@ const purchaseChannels = [
       //普通货物60%概率出现：奶制品、调味品、水果等
       return rng < 0.6;
     }).map(m => {
-      let stockMin = 20, stockMax = 35;//实际玩了以后发现酥油是不太够的所以拉高库存
+      let stockMin = 7, stockMax = 15;
       //如果是稀有标签，刷出来的库存也更少一点
       if (m.tags.includes('imported') || m.tags.includes('fermented')) {
         stockMin = 3;

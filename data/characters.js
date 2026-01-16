@@ -26,7 +26,13 @@ window.characters = {
             "官人快瞧瞧，奴家这件衣服是不是太素了？",
             "刚才那个路人一直在看……哼，羡慕也没用，奴家是官人的。",
             "哼，官人光顾着做生意，都顾不上看奴家一眼。"
-        ]
+        ],
+        skill: {
+            name: "回眸一笑",
+            desc: "下一次服务必定完美，且收益翻倍。",
+            icon: "😘",
+            threshold: 20
+        }
     },
     'wusong': {
         id: 'wusong',
@@ -51,7 +57,13 @@ window.characters = {
             "那只老虎……我总要再打一只给姐姐做衣裳才好。",
             "县衙的差事真无聊。",
             "姐姐老是看着嫂嫂……也关心关心我这个亲弟弟嘛。"
-        ]
+        ],
+        skill: {
+            name: "护佑",
+            desc: "复刻本局目前为止最高的一笔收入。",
+            icon: "🐯",
+            threshold: 20
+        }
     },
     'ximen': {
         id: 'ximen',
@@ -76,8 +88,34 @@ window.characters = {
             "那窗户、没、没关严……不是我、偷看……",
             "我没、没跟踪……顺路……而已。",
             "（小声嘀咕）生意好好的样子……她会看见我吗？"
-        ]
+        ],
+        skill: {
+            name: "公子买单",
+            desc: "直接买下全场客人的单（按最低价），清空队列。",
+            icon: "💸",
+            threshold: 20
+        }
     }
 };
 
-// ... (addFavorability 函数保持不变) ...
+//全局好感度增加函数
+window.addFavorability = function(charId, amount) {
+    //安全检查
+    if (!window.characters || !window.characters[charId]) {
+        console.warn(`⚠️ 试图给不存在的角色 ID [${charId}] 加好感`);
+        return;
+    }
+
+    //增加数值
+    let char = window.characters[charId];
+    // 防止 favorability 是 undefined
+    char.favorability = (char.favorability || 0) + amount;
+
+    //打印日志方便调试
+    console.log(`💕 ${char.name} 好感度 +${amount} (当前: ${char.favorability})`);
+    
+    //在这里加个飘字提示
+    if (window.pushText) {
+        window.pushText(`${char.name} 好感度 +${amount}`);
+    }
+};

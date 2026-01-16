@@ -21,7 +21,8 @@ const tagNames = {
   'rich': '浓郁',
   'milky': '奶香',
   'light': '清淡', 
-  'snack': '零嘴'
+  'snack': '零嘴',
+  'dry': '干香'
 };
 function getTagName(tagId) {
   return tagNames[tagId] || tagId;//找不到对应中文的时候用原ID显示

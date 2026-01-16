@@ -1,0 +1,942 @@
+body { max-width: 420px; margin: 0 auto; font-size: 16px; background: #f6f6f9; transition: background 0.7s;}
+#status { margin: 10px 0 0 0; padding: 6px 0; background: #fffbe7; border-radius: 10px; text-align: center; }
+#news {
+  margin: 16px 0 0 0;
+  background: #eaf3ff;
+  color: #2b4c88;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(150,170,210,.08);
+  text-align: center;
+}
+#materials {
+  margin: 10px 0 0 0; padding: 7px 0 7px 0; background: #e9f9e7;
+  border-radius: 10px;
+  font-size: 15px;
+  text-align: center;
+  color: #297a21;
+}
+#main-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 390px;
+}
+#text-area {
+  background: #fff;
+  margin: 18px 0 0 0;
+  border-radius: 16px;
+  min-height: 130px;
+  max-height: 240px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  padding: 16px;
+  font-size: 17px;
+  line-height: 1.8;
+  text-align: left;
+  word-break: break-all;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scroll-behavior: smooth;
+}
+#actions {
+  margin: 18px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#actions button {
+  padding: 12px 0;
+  font-size: 17px;
+  border-radius: 8px;
+  background: #fff9f2;
+  border: 1px solid #eee1c3;
+  box-shadow: 0 1px 2px #f6e3c8;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+#actions button:active {
+  background: #ffe2b5;
+}
+#log {
+  color: #888; font-size: 13px; background: #f0f0f0;
+  margin: 18px 0 6px 0;
+  padding: 8px;
+  height: 72px;
+  overflow-y: auto;
+  border-radius: 10px;
+  opacity: 0.88;
+}
+h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
+.textline { margin-bottom: 3px;}
+/* 好感侧栏 */
+#sidebar-btn {
+  position: fixed;
+  top: 44px;
+  right: 12px;
+  z-index: 1002;
+  background: #ffd773;
+  color: #654800;
+  border: none;
+  border-radius: 50%;
+  width: 38px; height: 38px;
+  font-size: 19px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.11);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+#sidebar-btn:active { background: #ffb85c; }
+#sidebar {
+  position: fixed;
+  top: 0; right: -240px;
+  width: 220px; height: 100%;
+  background: #fffbe7;
+  border-left: 2px solid #f0d595;
+  box-shadow: -3px 0 12px rgba(0,0,0,0.07);
+  z-index: 1001;
+  transition: right 0.35s;
+  padding: 28px 14px 14px 14px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+#sidebar.active { right: 0; }
+.favor-title { font-weight: bold; margin-bottom: 8px; }
+.favor-item { display: flex; justify-content: space-between; padding: 4px 0;}
+.favor-name { color: #694c21;}
+.favor-value { color: #d08a36; font-weight: bold;}
+
+/*商店覆盖在画面最上*/
+#shop-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 800px;
+  height: 80vh;
+  background: #2b2b2b; /* 深色背景 */
+  border: 4px solid #8b4513; /* 木质边框 */
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000; /* 保证在最上层 */
+  font-family: 'Courier New', monospace;
+  color: #eee;
+}
+
+/*商店标题栏*/
+.shop-header {
+  padding: 15px;
+  background: #3e3e3e;
+  border-bottom: 2px solid #555;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 核心布局：左右分栏 */
+.shop-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden; /* 防止溢出 */
+}
+
+/* 左边：商家货架 */
+.shop-left {
+  flex: 2; /* 占 2/3 宽度 */
+  padding: 10px;
+  overflow-y: auto; /* 内容多了可以滚动 */
+  border-right: 2px solid #444;
+  background: #222;
+}
+
+/* 右边：购物篮 */
+.shop-right {
+  flex: 1; /* 占 1/3 宽度 */
+  padding: 10px;
+  background: #2a2a2a;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 商品卡片 Grid 布局 */
+.goods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+/* 单个商品卡片 */
+.goods-item {
+  background: #333;
+  border: 2px solid #555;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.1s;
+  user-select: none; /* 防止快速点击时选中文本 */
+}
+
+.goods-item:hover {
+  background: #444;
+  border-color: #aaa;
+}
+
+.goods-item:active {
+  transform: scale(0.95); /* 点击时的按压感 */
+}
+
+.goods-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  margin-bottom: 5px;
+}
+
+.stock-tag {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.price-tag {
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+/* 购物车列表 */
+.cart-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px dashed #444;
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.cart-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 5px 0;
+  border-bottom: 1px solid #333;
+}
+
+/* 底部结算按钮区 */
+.shop-footer {
+  text-align: center;
+}
+
+.checkout-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 4px;
+}
+.checkout-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.close-btn {
+  background: #d9534f;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+/* --- 研发实验室样式 --- */
+.research-container {
+    display: flex;
+    height: 100%;
+    gap: 20px;
+}
+.research-left {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+}
+.research-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* 研发槽位区 */
+.slots-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.research-slot {
+    width: 80px;
+    height: 80px;
+    border: 2px dashed #666;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    position: relative;
+}
+.research-slot.drag-over {
+    border-color: #ffcc00;
+    background: rgba(255, 204, 0, 0.1);
+    transform: scale(1.05);
+}
+.research-slot.filled {
+    border: 2px solid #888;
+    background: rgba(255, 255, 255, 0.1);
+}
+.slot-img {
+    width: 48px;
+    height: 48px;
+    pointer-events: none; /* 防止图片阻挡拖拽事件 */
+}
+.slot-remove {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: #ff4d4f;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    cursor: pointer;
+    font-size: 12px;
+    display: none;
+}
+.research-slot:hover .slot-remove {
+    display: block;
+}
+
+/* 提示与按钮 */
+.research-hint {
+    height: 40px;
+    color: #aaa;
+    font-style: italic;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.research-btn {
+    padding: 10px 30px;
+    font-size: 1.2em;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    opacity: 0.5;
+    pointer-events: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+.research-btn.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-2px);
+}
+.research-btn:active {
+    transform: translateY(0);
+}
+
+/* 可拖拽的食材 */
+.draggable-item {
+    cursor: grab;
+    transition: transform 0.2s;
+    position: relative;
+}
+.draggable-item:active {
+    cursor: grabbing;
+}
+.draggable-item:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.1);
+}
+.draggable-item.used {
+    opacity: 0.3;
+    filter: grayscale(100%);
+    pointer-events: none;
+}
+
+/* 🎉 成功弹窗动画 */
+@keyframes popIn {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    80% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.unlock-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+.unlock-modal {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    background: linear-gradient(135deg, #fff9f2 0%, #ffe3b2 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(255, 204, 0, 0.5);
+    border: 4px solid #fff;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    color: #543b0b;
+}
+.unlock-title {
+    font-size: 1.5em;
+    color: #d35400;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+.unlock-img {
+    width: 128px;
+    height: 128px;
+    margin: 10px auto;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+}
+.unlock-name {
+    font-size: 1.8em;
+    margin: 10px 0;
+    font-weight: bold;
+}
+.unlock-btn {
+    background: #d35400;
+    color: white;
+    border: none;
+    padding: 10px 40px;
+    border-radius: 20px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-top: 20px;
+}
+/* --- 侧边栏互动气泡 --- */
+
+/* Emoji 的容器：设为相对定位，作为气泡的坐标原点 */
+.favor-emoji-wrapper {
+    position: relative;
+    cursor: pointer;
+    font-size: 1.2em;
+    margin-right: 5px;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+/* 鼠标放上去稍微变大一点，提示可点击 */
+.favor-emoji-wrapper:hover {
+    transform: scale(1.2);
+}
+
+/* 气泡本体 */
+.sidebar-bubble {
+    position: absolute;
+    right: 120%; /* 放在头像的左边 */
+    top: 50%;
+    transform: translateY(-50%); /* 垂直居中 */
+    
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 5px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap; /* 不换行 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+    
+    /* 动画效果 */
+    opacity: 1;
+    transition: opacity 0.5s;
+    pointer-events: none; /* 让鼠标能穿透气泡，不影响点击 */
+}
+
+/* 气泡的小尾巴 (指向右边的头像) */
+.sidebar-bubble::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -6px; /* 贴在右边框外 */
+    margin-top: -6px;
+    border-width: 6px 0 6px 6px; /* 画一个向右的三角形 */
+    border-style: solid;
+    border-color: transparent transparent transparent #fff; /* 颜色同背景 */
+}
+/* 尾巴的描边 (为了视觉统一) */
+.sidebar-bubble::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -7px;
+    margin-top: -6px;
+    border-width: 6px 0 6px 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent #ccc; /* 颜色同边框 */
+}
+/* --- 侧边栏：图形化菜谱书 --- */
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 一行3个，嫌挤可以改成2 */
+    gap: 8px;
+    padding: 0 5px;
+}
+
+.recipe-icon-card {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 8px;
+    padding: 10px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.recipe-icon-card:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* 选中状态：金色边框 + 稍微高亮 */
+.recipe-icon-card.selected {
+    border-color: #ffcc00;
+    background: #fffdf9;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+/* 未解锁状态 */
+.recipe-icon-card.locked {
+    background: rgba(0, 0, 0, 0.03);
+    cursor: not-allowed;
+    opacity: 0.6;
+    filter: grayscale(100%);
+}
+
+.icon-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 5px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recipe-img {
+    max-width: 100%;
+    max-height: 100%;
+    /* 配合透明图的投影，让它立体一点 */
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
+
+.check-mark {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #ffcc00;
+    color: #fff;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 10px;
+    line-height: 16px;
+    font-weight: bold;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.recipe-name {
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #4a4a4a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recipe-price {
+    font-size: 0.75em;
+    color: #d35400;
+    margin-top: 2px;
+}
+/* --- 气泡提示样式 (追加在 style.css 末尾) --- */
+.hint-bubble {
+    position: fixed; /* 固定在屏幕上，不随滚动条跑 */
+    background: #fff;
+    border: 2px solid #543b0b; /* 这种深褐色很有古风感 */
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #543b0b;
+    font-size: 0.85em;
+    font-weight: bold;
+    z-index: 9999; /* 确保在最上层 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    pointer-events: none; /* 让气泡不阻挡点击，点穿过去 */
+    
+    /* 核心定位：水平居中，垂直向上偏移 */
+    transform: translate(-50%, -100%); 
+    
+    /* 弹出的动画 */
+    animation: bubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 220px; /* 防止字太多太宽 */
+    text-align: center;
+    transition: opacity 0.3s;
+}
+
+/* 气泡下面的小三角 */
+.hint-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px; /* 挂在屁股下面 */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0; /* 画三角形 */
+    border-style: solid;
+    border-color: #543b0b transparent transparent transparent;
+}
+
+/* 砰！弹出来的动画 */
+@keyframes bubblePop {
+    from { 
+        transform: translate(-50%, -80%) scale(0.5); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translate(-50%, -100%) scale(1); 
+        opacity: 1; 
+    }
+}
+/* tags的样式 */
+.tag-label {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #fdf6e3; /* 淡淡的米黄色 */
+    color: #cb4b16;    /* 砖红色，很有古风感 */
+    border: 1px solid #eee8d5;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-right: 4px;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+}
+
+/*调味，包括调料区本身和调味状态角标*/
+/* --- 调料区样式 --- */
+.desk-right {
+    /* 确保容器有高度和背景，方便调试 */
+    background: rgba(0,0,0,0.2); 
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap; /* 自动换行 */
+    gap: 8px;
+    align-content: flex-start;
+}
+
+.condiment-item {
+    width: 50px;
+    height: 60px; /* 稍微高一点，因为要放剩余次数 */
+    background: #fff;
+    border-radius: 5px;
+    border: 2px solid #8d6e63;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.1s;
+}
+
+.condiment-item:active {
+    transform: scale(0.9);
+}
+
+.condiment-item img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.condiment-item .uses {
+    font-size: 10px;
+    color: #fff;
+    background: #d35400; /* 橙色背景表示剩余次数 */
+    width: 100%;
+    text-align: center;
+    margin-top: 2px;
+}
+
+/* 空罐子样式 */
+.condiment-item.empty {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+    border-color: #ccc;
+}
+.condiment-item.empty .uses {
+    background: #999;
+}
+/* 这是一个容器，用来包裹食物图片和角标 */
+.food-card-wrapper {
+    position: relative;
+    display: inline-block;
+    margin: 5px;
+}
+
+/* 基础角标样式 */
+.condiment-badge {
+    position: absolute;
+    top: -5px;     /* 稍微悬浮在卡片外面一点，增加立体感 */
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 2px solid #543b0b;
+    border-radius: 50%;
+    
+    /* 让 emoji 居中 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    z-index: 10;
+    
+    /* 加个小阴影 */
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    
+    /* 弹入动画 */
+    animation: popIn Badge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 不同口味的配色和图标 */
+.badge-spicy::after { content: '🌶️'; }
+.badge-spicy { border-color: #ff4d4f; background: #fff1f0; }
+
+.badge-sweet::after { content: '🍬'; } /* 或者用 🍯 */
+.badge-sweet { border-color: #ffcc00; background: #fffbe6; }
+
+.badge-salty::after { content: '🧂'; }
+.badge-salty { border-color: #1890ff; background: #e6f7ff; }
+
+.badge-meat::after { content: '🥩'; }
+.badge-meat { border-color: #8c8c8c; background: #f5f5f5; }
+
+/* 简单的弹入动画 */
+@keyframes popInBadge {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+/* --- 多选序号标记 --- */
+.select-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: #d35400; /* 醒目的橙红色 */
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: 2px solid #fff;
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/*经营模块渲染*/
+/* --- 柜台经营模式样式 --- */
+.counter-top-bar {
+    position: absolute; top: 20px; width: 100%;
+    display: flex; justify-content: center; gap: 30px;
+    font-size: 1.2em; font-weight: bold; color: #fff;
+    text-shadow: 1px 1px 3px #000;
+}
+
+.customer-queue {
+    position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px;
+}
+
+.customer-card {
+    width: 80px; height: 120px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px; border: 2px solid #543b0b;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: all 0.3s;
+}
+
+.customer-card.active-customer {
+    transform: scale(1.1); border-color: #d35400; box-shadow: 0 0 15px #ffcc00;
+}
+
+.customer-emoji { font-size: 40px; }
+.customer-bubble { font-size: 12px; background: #fff; padding: 2px 5px; border-radius: 4px; border: 1px solid #ccc; margin-top: 5px; }
+
+.counter-desk {
+    position: absolute; bottom: 0; width: 100%; height: 200px;
+    background: #5d4037; border-top: 4px solid #3e2723;
+    display: flex; justify-content: space-between; padding: 10px; box-sizing: border-box;
+}
+
+.desk-left, .desk-right {
+    width: 25%; background: rgba(0,0,0,0.2); border-radius: 8px;
+    display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px; padding: 5px; overflow-y: auto;
+}
+
+.desk-food-item {
+    width: 48px; height: 48px; background: #fff; border-radius: 4px;
+    cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.desk-food-item img { width: 32px; height: 32px; }
+.desk-food-item .price { font-size: 10px; color: #666; }
+
+.desk-center {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+
+.serving-plate {
+    width: 120px; height: 120px; background: #fff; border-radius: 50%;
+    border: 4px solid #d7ccc8; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+}
+
+.plated-food { width: 80px; height: 80px; }
+.plate-hint { color: #aaa; font-size: 0.9em; }
+
+.serve-btn {
+    padding: 10px 30px; background: #27ae60; color: #fff; border: none; border-radius: 20px;
+    font-weight: bold; font-size: 1.1em; cursor: pointer; box-shadow: 0 4px 0 #1e8449;
+}
+.serve-btn:active { transform: translateY(4px); box-shadow: none; }
+
+/* 通用全屏遮罩 (用于开业确认、柜台经营、结算) */
+.modal-overlay {
+    position: fixed;       /* 核心：固定在屏幕窗口 */
+    top: 0; 
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* 深色半透明背景 */
+    z-index: 2000;         /* 保证在最上层 */
+    
+    /* 弹性布局：让里面的内容绝对居中 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+/* 针对柜台背景的特殊调整 */
+#counter-overlay {
+    /* 柜台模式可能需要更亮的背景或者特定图片 */
+    background: #3e2723 url('images/bg_counter.png') center/cover no-repeat;
+}
+/*增加暂停按钮*/
+.pause-btn {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #fff;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 0.8em;
+}
+.pause-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+/*雅座位置*/
+.special-seat {
+    position: absolute; /* ★ 关键：让它脱离文档流，自由飞翔 */
+    top: 90px;          /* 距离顶部 90像素 (刚好在倒计时下面) */
+    right: 20px;        /* 距离右边 20像素 */
+    width: 100px;
+    height: 140px;
+    
+    /* 给它一个淡淡的背景，让你能看清它的位置 */
+    background: rgba(255, 215, 0, 0.1); 
+    border: 2px dashed rgba(255, 215, 0, 0.5); /* 金色虚线边框 */
+    border-radius: 10px;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100; /* 保证它浮在最上面 */
+}
+
+/*特殊客人的卡片*/
+.special-guest-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column; /* 上下排列：头在上面，名字在下面 */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: float 3s ease-in-out infinite; /* 微微浮动特效 */
+}
+.special-emoji {
+    font-size: 60px; /* ★ 这里控制头像大小 */
+    filter: drop-shadow(0 0 5px gold); /* 发光特效 */
+    margin-bottom: 5px;
+}
+.special-name {
+    background: #d35400;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.special-demand-box {
+    position: absolute;
+    top: -30px; /* 飘在头顶 */
+    background: #fff;
+    border: 2px solid #d35400;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.special-demand-box::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: #d35400 transparent transparent transparent;
+}
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
