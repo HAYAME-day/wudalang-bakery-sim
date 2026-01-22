@@ -1,3 +1,4 @@
+/* style.css - 最终清理版 */
 body { max-width: 420px; margin: 0 auto; font-size: 16px; background: #f6f6f9; transition: background 0.7s;}
 #status { margin: 10px 0 0 0; padding: 6px 0; background: #fffbe7; border-radius: 10px; text-align: center; }
 #news {
@@ -891,22 +892,23 @@ h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
     z-index: 100; /* 保证它浮在最上面 */
 }
 
-/*特殊客人的卡片*/
 .special-guest-card {
-    width: 100%;
-    height: 100%;
+    /* 确保卡片是垂直排列的，且居中 */
     display: flex;
-    flex-direction: column; /* 上下排列：头在上面，名字在下面 */
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    animation: float 3s ease-in-out infinite; /* 微微浮动特效 */
+    justify-content: flex-start;
+    padding-top: 10px;
+    /* 给一点内边距，防止贴边 */
 }
+
 .special-emoji {
-    font-size: 60px; /* ★ 这里控制头像大小 */
-    filter: drop-shadow(0 0 5px gold); /* 发光特效 */
-    margin-bottom: 5px;
+    font-size: 3em; /* 头像大一点 */
+    margin-bottom: 5px; /* 和技能按钮保持一点距离 */
+    line-height: 1;
+    filter: drop-shadow(0 4px 2px rgba(0,0,0,0.2)); /* 头像投影，更立体 */
 }
+
 .special-name {
     background: #d35400;
     color: white;
@@ -939,4 +941,168 @@ h2 { margin: 20px 0 8px 0; text-align: center; font-weight: bold; }
     0% { transform: translateY(0px); }
     50% { transform: translateY(-5px); }
     100% { transform: translateY(0px); }
+}
+/*故事文本支持自动换行*/
+.story-content {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #333;
+    min-height: 100px;
+    
+    white-space: pre-wrap; 
+}
+/*古风宣纸卷轴风格的story-overlay */
+#story-overlay .story-box {
+    background: #fdf5e6; /* 米黄色宣纸底色 */
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmRmNWU2Ii8+CjxwYXRoIGQ9Ik0wIDBMNCA0Wk00IDBMMCA0WiIgc3Ryb2tlPSIjZjBlNmM4IiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+'); /* 简单的纹理 */
+    border: 4px double #8b4513; /* 双线深棕色边框 */
+    border-radius: 2px;
+    box-shadow: 10px 10px 0 rgba(0,0,0,0.2);
+    color: #3e2723;
+    padding: 25px;
+    width: 85%;
+}
+
+#story-overlay .story-header {
+    border-bottom: 2px solid #8b4513;
+    padding-bottom: 10px;
+    color: #8b4513;
+}
+
+#story-overlay .story-content {
+    font-family: "KaiTi", "楷体", serif; /* 尝试调用楷体 */
+    font-size: 18px;
+    line-height: 1.6;
+    color: #2c1e19;
+    /*换行符*/
+    white-space: pre-wrap;
+}
+
+/* 分隔线样式重写 */
+#story-overlay hr {
+    border-top: 1px solid #8b4513 !important;
+    opacity: 0.5;
+}
+
+#story-overlay .story-btn {
+    background: transparent;
+    border: 2px solid #8b4513;
+    color: #8b4513;
+    font-weight: bold;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 20px;
+}
+
+#story-overlay .story-btn:hover {
+    background: #8b4513;
+    color: #fff;
+}
+
+/* --- 🛡️ 技能徽章与提示框 (最终修正版) --- */
+
+/* 1. 容器定位 */
+.skill-badge-container { /* 注意：对应 JS 里的类名 */
+    position: relative;
+    width: 90%;          /* 宽度稍微收一点 */
+    margin: 5px auto;    /* 水平居中 */
+    z-index: 100;        /* 保证气泡在最上层 */
+    display: flex;
+    justify-content: center;
+}
+
+/* 2. 徽章按钮主体 (灵玉风格) */
+.skill-badge {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%); 
+    border: 2px solid #fff;
+    border-radius: 20px; 
+    color: #8b4513; 
+    padding: 4px 12px;   /* 内边距 */
+    font-size: 0.8em;
+    font-weight: bold;
+    box-shadow: 
+        0 2px 5px rgba(0,0,0,0.2), 
+        inset 0 1px 0 rgba(255,255,255,0.5); 
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    white-space: nowrap;
+    width: auto;         /* 宽度自适应文字 */
+    min-width: 80px;     /* 最小宽度 */
+    text-align: center;
+}
+
+.skill-badge:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px #ffd700;
+}
+
+.skill-badge:active {
+    transform: scale(0.95);
+}
+
+/* 🔒 锁定状态 */
+.skill-badge.locked {
+    background: #bdc3c7; 
+    color: #7f8c8d;
+    border-color: #95a5a6;
+    box-shadow: none;
+    cursor: help;
+}
+
+/* 🚫 已使用状态 */
+.skill-badge.used {
+    background: #3e2723; 
+    color: #a1887f;
+    border-color: #5d4037;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); 
+    cursor: default;
+    transform: none;
+}
+
+/* 3. 气泡提示 (悬浮/点击显示) */
+/* 默认隐藏 */
+.skill-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    top: 130%; /* 在按钮下方一点 */
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #ffd700;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    pointer-events: none;
+    z-index: 200;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* 鼠标悬停容器时显示气泡 */
+.skill-badge-container:hover .skill-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* 气泡小三角 (朝上) */
+.skill-tooltip::after {
+    content: "";
+    position: absolute;
+    bottom: 100%; 
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent rgba(0,0,0,0.9) transparent;
+}
+
+/* JS 控制的显示类 (用于未解锁点击时的提示) */
+.skill-tooltip.show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
